@@ -1,0 +1,6 @@
+.{
+	.name = "6502-emulator",
+	.version = "0.1.0",
+
+	.dependencies = .{ },
+}

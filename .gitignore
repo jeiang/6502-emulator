@@ -1,0 +1,12 @@
+# Zig Build artificts
+zig-cache/
+zig-out/
+/release/
+/debug/
+/build/
+/build-*/
+/docgen_tmp/
+
+# Nix Artifacts
+.direnv/
+result
