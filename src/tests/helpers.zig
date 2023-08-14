@@ -7,7 +7,7 @@ pub fn batchCompareEqual(tests: anytype) !void {
     if (args_type_info != .Struct) {
         @compileError("expected tuple or struct argument, found " ++ @typeName(ArgsType));
     }
-    inline for (args_type_info.Struct.fields) |field| {
+    inline for (args_type_info.Struct.fields, 0..) |field, idx| {
         const items_to_test = @field(tests, field.name);
         const FieldType = @TypeOf(items_to_test);
         const field_type_info = @typeInfo(FieldType);
@@ -25,6 +25,9 @@ pub fn batchCompareEqual(tests: anytype) !void {
         comptime if (@TypeOf(expected) != @TypeOf(actual)) {
             @compileError("the type of expected and actual is not the same. expected is " ++ @typeName(@TypeOf(expected)) ++ " and the type of actual is " ++ @typeName(@TypeOf(actual)));
         };
-        try std.testing.expectEqual(expected, actual);
+        std.testing.expectEqual(expected, actual) catch |err| {
+            std.debug.print("item {d} was not equal\n", .{idx});
+            return err;
+        };
     }
 }

@@ -28,6 +28,10 @@ test "LDA (Immediate) can load a value into the A register" {
         .{ .expected = expected_cycles, .actual = cycles_used },
         .{ .expected = cpu_copy.PS, .actual = cpu.PS },
         .{ .expected = @as(u8, 0x84), .actual = cpu.A },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.X },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.Y },
+        .{ .expected = @as(u16, 0x0202), .actual = cpu.PC },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.SP },
     });
 }
 
@@ -54,6 +58,10 @@ test "LDA (Immediate) can load zero into the A register and set the Zero Flag" {
         .{ .expected = expected_cycles, .actual = cycles_used },
         .{ .expected = cpu_copy.PS, .actual = cpu.PS },
         .{ .expected = @as(u8, 0x00), .actual = cpu.A },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.X },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.Y },
+        .{ .expected = @as(u16, 0x0202), .actual = cpu.PC },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.SP },
     });
 }
 
@@ -81,6 +89,10 @@ test "LDA (Zero Page) can load a value into the A register" {
         .{ .expected = expected_cycles, .actual = cycles_used },
         .{ .expected = cpu_copy.PS, .actual = cpu.PS },
         .{ .expected = @as(u8, 0x34), .actual = cpu.A },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.X },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.Y },
+        .{ .expected = @as(u16, 0x0202), .actual = cpu.PC },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.SP },
     });
 }
 
@@ -109,6 +121,10 @@ test "LDA (Zero Page, X) can load a value into the A register" {
         .{ .expected = expected_cycles, .actual = cycles_used },
         .{ .expected = cpu_copy.PS, .actual = cpu.PS },
         .{ .expected = @as(u8, 0x84), .actual = cpu.A },
+        .{ .expected = @as(u8, 0x21), .actual = cpu.X },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.Y },
+        .{ .expected = @as(u16, 0x0202), .actual = cpu.PC },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.SP },
     });
 }
 
@@ -137,6 +153,10 @@ test "LDA (Zero Page, X) can load a value into the A register when it wraps" {
         .{ .expected = expected_cycles, .actual = cycles_used },
         .{ .expected = cpu_copy.PS, .actual = cpu.PS },
         .{ .expected = @as(u8, 0x84), .actual = cpu.A },
+        .{ .expected = @as(u8, 0x69), .actual = cpu.X },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.Y },
+        .{ .expected = @as(u16, 0x0202), .actual = cpu.PC },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.SP },
     });
 }
 
@@ -166,6 +186,10 @@ test "LDA (Absolute) can load a value into the A register" {
         .{ .expected = expected_cycles, .actual = cycles_used },
         .{ .expected = cpu_copy.PS, .actual = cpu.PS },
         .{ .expected = @as(u8, 0x84), .actual = cpu.A },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.X },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.Y },
+        .{ .expected = @as(u16, 0x0203), .actual = cpu.PC },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.SP },
     });
 }
 
@@ -196,6 +220,10 @@ test "LDA (Absolute, X) can load a value into the A register" {
         .{ .expected = expected_cycles, .actual = cycles_used },
         .{ .expected = cpu_copy.PS, .actual = cpu.PS },
         .{ .expected = @as(u8, 0x84), .actual = cpu.A },
+        .{ .expected = @as(u8, 0x01), .actual = cpu.X },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.Y },
+        .{ .expected = @as(u16, 0x0203), .actual = cpu.PC },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.SP },
     });
 }
 
@@ -227,6 +255,10 @@ test "LDA (Absolute, X) can load a value into the A register when the reading ad
         .{ .expected = expected_cycles, .actual = cycles_used },
         .{ .expected = cpu_copy.PS, .actual = cpu.PS },
         .{ .expected = @as(u8, 0x84), .actual = cpu.A },
+        .{ .expected = @as(u8, 0xFF), .actual = cpu.X },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.Y },
+        .{ .expected = @as(u16, 0x0203), .actual = cpu.PC },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.SP },
     });
 }
 
@@ -257,6 +289,10 @@ test "LDA (Absolute, Y) can load a value into the A register" {
         .{ .expected = expected_cycles, .actual = cycles_used },
         .{ .expected = cpu_copy.PS, .actual = cpu.PS },
         .{ .expected = @as(u8, 0x84), .actual = cpu.A },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.X },
+        .{ .expected = @as(u8, 0x01), .actual = cpu.Y },
+        .{ .expected = @as(u16, 0x0203), .actual = cpu.PC },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.SP },
     });
 }
 
@@ -288,6 +324,10 @@ test "LDA (Absolute, Y) can load a value into the A register when the reading ad
         .{ .expected = expected_cycles, .actual = cycles_used },
         .{ .expected = cpu_copy.PS, .actual = cpu.PS },
         .{ .expected = @as(u8, 0x84), .actual = cpu.A },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.X },
+        .{ .expected = @as(u8, 0xFF), .actual = cpu.Y },
+        .{ .expected = @as(u16, 0x0203), .actual = cpu.PC },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.SP },
     });
 }
 
@@ -319,6 +359,10 @@ test "LDA ((Indirect, X)) can load a value into the A register" {
         .{ .expected = expected_cycles, .actual = cycles_used },
         .{ .expected = cpu_copy.PS, .actual = cpu.PS },
         .{ .expected = @as(u8, 0x84), .actual = cpu.A },
+        .{ .expected = @as(u8, 0x04), .actual = cpu.X },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.Y },
+        .{ .expected = @as(u16, 0x0202), .actual = cpu.PC },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.SP },
     });
 }
 
@@ -350,6 +394,10 @@ test "LDA ((Indirect, X)) can load a value into the A register when the reading 
         .{ .expected = expected_cycles, .actual = cycles_used },
         .{ .expected = cpu_copy.PS, .actual = cpu.PS },
         .{ .expected = @as(u8, 0x84), .actual = cpu.A },
+        .{ .expected = @as(u8, 0xFF), .actual = cpu.X },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.Y },
+        .{ .expected = @as(u16, 0x0202), .actual = cpu.PC },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.SP },
     });
 }
 
@@ -381,6 +429,10 @@ test "LDA ((Indirect), Y) can load a value into the A register" {
         .{ .expected = expected_cycles, .actual = cycles_used },
         .{ .expected = cpu_copy.PS, .actual = cpu.PS },
         .{ .expected = @as(u8, 0x84), .actual = cpu.A },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.X },
+        .{ .expected = @as(u8, 0x04), .actual = cpu.Y },
+        .{ .expected = @as(u16, 0x0202), .actual = cpu.PC },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.SP },
     });
 }
 
@@ -412,5 +464,9 @@ test "LDA ((Indirect), Y) can load a value into the A register when the reading 
         .{ .expected = expected_cycles, .actual = cycles_used },
         .{ .expected = cpu_copy.PS, .actual = cpu.PS },
         .{ .expected = @as(u8, 0x84), .actual = cpu.A },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.X },
+        .{ .expected = @as(u8, 0xFF), .actual = cpu.Y },
+        .{ .expected = @as(u16, 0x0202), .actual = cpu.PC },
+        .{ .expected = @as(u8, 0x00), .actual = cpu.SP },
     });
 }
