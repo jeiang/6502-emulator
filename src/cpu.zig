@@ -329,18 +329,28 @@ pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) u32 {
         };
         switch (op) {
             .lda_immediate => {
-                var value: u8 = self.FetchByte(&cycles, mem);
-                self.A = value;
+                self.A = self.FetchByte(&cycles, mem);
             },
             .lda_zero_page => {
-                var zero_page_address: u8 = self.FetchByte(&cycles, mem);
-                self.A = ReadByte(&cycles, mem, zero_page_address);
+                self.A = self.FetchByteZeroPage(&cycles, mem);
             },
             .lda_zero_page_x => {
-                const add_result = @addWithOverflow(self.FetchByte(&cycles, mem), self.X);
-                const zero_page_address = add_result[0];
-                cycles += 1;
-                self.A = ReadByte(&cycles, mem, zero_page_address);
+                self.A = self.FetchByteZeroPageX(&cycles, mem);
+            },
+            .lda_absolute => {
+                self.A = self.FetchByteAbsolute(&cycles, mem);
+            },
+            .lda_absolute_x => {
+                self.A = self.FetchByteAbsoluteX(&cycles, mem);
+            },
+            .lda_absolute_y => {
+                self.A = self.FetchByteAbsoluteY(&cycles, mem);
+            },
+            .lda_indirect_x => {
+                self.A = self.FetchByteIndirectX(&cycles, mem);
+            },
+            .lda_indirect_y => {
+                self.A = self.FetchByteIndirectY(&cycles, mem);
             },
             .jsr_absolute => {
                 var subroutine_address = self.FetchWord(&cycles, mem);
@@ -352,12 +362,77 @@ pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) u32 {
                 cycles += 1;
             },
             else => {
-                std.debug.print("Instruction 0x{X:0>2} ({?s}) does not have a registered handler.\n", .{ @intFromEnum(op), std.enums.tagName(Opcode, op) });
+                if (!@import("builtin").is_test) {
+                    std.debug.print("Instruction 0x{X:0>2} ({?s}) does not have a registered handler.\n", .{ @intFromEnum(op), std.enums.tagName(Opcode, op) });
+                } else {
+                    @panic("invalid instruction");
+                }
             },
         }
         self.SetStatus(op);
     }
     return cycles;
+}
+
+fn FetchByteZeroPage(self: *Self, cycles: *u32, mem: *Mem) u8 {
+    const byte = ReadByte(cycles, mem, self.PC);
+    self.PC += 1;
+    return ReadByte(cycles, mem, byte);
+}
+
+fn FetchByteZeroPageX(self: *Self, cycles: *u32, mem: *Mem) u8 {
+    const byte = ReadByte(cycles, mem, self.PC);
+    self.PC += 1;
+    const add_result = @addWithOverflow(byte, self.X);
+    const zero_page_address = add_result[0];
+    cycles.* += 1;
+    return ReadByte(cycles, mem, zero_page_address);
+}
+
+fn FetchByteAbsolute(self: *Self, cycles: *u32, mem: *Mem) u8 {
+    const address = self.FetchWord(cycles, mem);
+    return ReadByte(cycles, mem, address);
+}
+
+fn FetchByteAbsoluteX(self: *Self, cycles: *u32, mem: *Mem) u8 {
+    var address: u16 = self.FetchWord(cycles, mem);
+    const upper = address & 0xFF00;
+    address += self.X;
+    if (upper != (address & 0xFF00)) {
+        cycles.* += 1;
+    }
+    return ReadByte(cycles, mem, address);
+}
+
+fn FetchByteAbsoluteY(self: *Self, cycles: *u32, mem: *Mem) u8 {
+    var address: u16 = self.FetchWord(cycles, mem);
+    const upper = address & 0xFF00;
+    address += self.Y;
+    if (upper != (address & 0xFF00)) {
+        cycles.* += 1;
+    }
+    return ReadByte(cycles, mem, address);
+}
+
+fn FetchByteIndirectX(self: *Self, cycles: *u32, mem: *Mem) u8 {
+    var indirect_address: u8 = self.FetchByte(cycles, mem); // 1 cycle
+    const add_result = @addWithOverflow(indirect_address, self.X); // 1 cycle
+    indirect_address = add_result[0];
+    cycles.* += 1;
+    var effective_address: u16 = ReadWord(cycles, mem, @intCast(indirect_address)); // 2 cycles
+    return ReadByte(cycles, mem, effective_address); // 1 cycle
+}
+
+fn FetchByteIndirectY(self: *Self, cycles: *u32, mem: *Mem) u8 {
+    var indirect_address: u16 = @intCast(self.FetchByte(cycles, mem)); // 1 cycle
+    var effective_address: u16 = ReadWord(cycles, mem, indirect_address); // 2 cycles
+    const upper_effective_address: u16 = effective_address & 0xFF00;
+    const add_result = @addWithOverflow(effective_address, self.Y); // 1 cycle
+    effective_address = add_result[0];
+    if (upper_effective_address != (effective_address & 0xFF00)) {
+        cycles.* += 1;
+    }
+    return ReadByte(cycles, mem, effective_address); // 1 cycle
 }
 
 fn FetchByte(self: *Self, cycles: *u32, mem: *Mem) u8 {

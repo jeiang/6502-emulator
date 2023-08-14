@@ -38,24 +38,6 @@ test "CPU can execute more cycles than requested if instruction needs more cycle
     try testing.expectEqual(@as(u32, 2), cycles_used);
 }
 
-test "CPU does not panic or loop forever when invalid instruction provided" {
-    var mem: Mem = Mem{};
-    var cpu: Cpu = Cpu{};
-
-    // given:
-    mem.WriteByteAtAddress(0xFFFC, 0x00);
-    mem.WriteByteAtAddress(0xFFFD, 0x02);
-    mem.WriteByteAtAddress(0x0201, 0xFF);
-    cpu.Reset(&mem);
-
-    // when:
-    var requested_cycles: u32 = 1;
-    var cycles_used = cpu.Execute(requested_cycles, &mem);
-
-    // then:
-    try testing.expectEqual(@as(u32, 1), cycles_used);
-}
-
 test "JSR can jump to address and save last address on stack" {
     var mem: Mem = Mem{};
     var cpu: Cpu = Cpu{};
@@ -208,29 +190,259 @@ test "LDA (Zero Page, X) can load a value into the A register when it wraps" {
     try testing.expectEqual(cpu_copy.PS, cpu.PS);
 }
 
-// test "LDA (Absolute) can load a value into the A register" {
-//     var mem: Mem = Mem{};
-//     var cpu: Cpu = Cpu{};
+test "LDA (Absolute) can load a value into the A register" {
+    var mem: Mem = Mem{};
+    var cpu: Cpu = Cpu{};
 
-//     // given:
-//     mem.WriteByteAtAddress(0xFFFC, 0x00);
-//     mem.WriteByteAtAddress(0xFFFD, 0x02);
-//     mem.WriteByteAtAddress(0x0200, @intFromEnum(Cpu.Opcode.lda_absolute));
-//     mem.WriteByteAtAddress(0x0201, 0x69);
-//     mem.WriteByteAtAddress(0x0202, 0x21);
-//     mem.WriteByteAtAddress(0x2169, 0x84);
+    // given:
+    mem.WriteByteAtAddress(0xFFFC, 0x00);
+    mem.WriteByteAtAddress(0xFFFD, 0x02);
+    mem.WriteByteAtAddress(0x0200, @intFromEnum(Cpu.Opcode.lda_absolute));
+    mem.WriteByteAtAddress(0x0201, 0x69);
+    mem.WriteByteAtAddress(0x0202, 0x21);
+    mem.WriteByteAtAddress(0x2169, 0x84);
 
-//     cpu.Reset(&mem);
-//     var cpu_copy = cpu;
+    cpu.Reset(&mem);
+    var cpu_copy = cpu;
 
-//     // when:
-//     var expected_cycles: u32 = 4;
-//     var cycles_used = cpu.Execute(expected_cycles, &mem);
+    // when:
+    var expected_cycles: u32 = 4;
+    var cycles_used = cpu.Execute(expected_cycles, &mem);
 
-//     // then:
-//     try testing.expectEqual(expected_cycles, cycles_used);
-//     try testing.expectEqual(@as(u8, 0x84), cpu.A);
-//     cpu_copy.PS.Z = 0;
-//     cpu_copy.PS.N = 1;
-//     try testing.expectEqual(cpu_copy.PS, cpu.PS);
-// }
+    // then:
+    try testing.expectEqual(expected_cycles, cycles_used);
+    try testing.expectEqual(@as(u8, 0x84), cpu.A);
+    cpu_copy.PS.Z = 0;
+    cpu_copy.PS.N = 1;
+    try testing.expectEqual(cpu_copy.PS, cpu.PS);
+}
+
+test "LDA (Absolute, X) can load a value into the A register" {
+    var mem: Mem = Mem{};
+    var cpu: Cpu = Cpu{};
+
+    // given:
+    mem.WriteByteAtAddress(0xFFFC, 0x00);
+    mem.WriteByteAtAddress(0xFFFD, 0x02);
+    mem.WriteByteAtAddress(0x0200, @intFromEnum(Cpu.Opcode.lda_absolute_x));
+    mem.WriteByteAtAddress(0x0201, 0x80);
+    mem.WriteByteAtAddress(0x0202, 0x44); // 0x4480
+    mem.WriteByteAtAddress(0x4481, 0x84);
+
+    cpu.Reset(&mem);
+    var cpu_copy = cpu;
+    cpu.X = 1;
+
+    // when:
+    var expected_cycles: u32 = 4;
+    var cycles_used = cpu.Execute(expected_cycles, &mem);
+
+    // then:
+    try testing.expectEqual(expected_cycles, cycles_used);
+    try testing.expectEqual(@as(u8, 0x84), cpu.A);
+    cpu_copy.PS.Z = 0;
+    cpu_copy.PS.N = 1;
+    try testing.expectEqual(cpu_copy.PS, cpu.PS);
+}
+
+test "LDA (Absolute, X) can load a value into the A register when the reading address crosses the page boundary" {
+    var mem: Mem = Mem{};
+    var cpu: Cpu = Cpu{};
+
+    // given:
+    mem.WriteByteAtAddress(0xFFFC, 0x00);
+    mem.WriteByteAtAddress(0xFFFD, 0x02);
+    mem.WriteByteAtAddress(0x0200, @intFromEnum(Cpu.Opcode.lda_absolute_x));
+    mem.WriteByteAtAddress(0x0201, 0x02);
+    mem.WriteByteAtAddress(0x0202, 0x44); // 0x4402
+    mem.WriteByteAtAddress(0x4501, 0x84);
+    mem.WriteByteAtAddress(0x4502, 0xFF);
+
+    cpu.Reset(&mem);
+    var cpu_copy = cpu;
+    cpu.X = 0xFF;
+
+    // when:
+    var expected_cycles: u32 = 5;
+    var cycles_used = cpu.Execute(expected_cycles, &mem);
+
+    // then:
+    try testing.expectEqual(expected_cycles, cycles_used);
+    try testing.expectEqual(@as(u8, 0x84), cpu.A);
+    cpu_copy.PS.Z = 0;
+    cpu_copy.PS.N = 1;
+    try testing.expectEqual(cpu_copy.PS, cpu.PS);
+}
+
+test "LDA (Absolute, Y) can load a value into the A register" {
+    var mem: Mem = Mem{};
+    var cpu: Cpu = Cpu{};
+
+    // given:
+    mem.WriteByteAtAddress(0xFFFC, 0x00);
+    mem.WriteByteAtAddress(0xFFFD, 0x02);
+    mem.WriteByteAtAddress(0x0200, @intFromEnum(Cpu.Opcode.lda_absolute_y));
+    mem.WriteByteAtAddress(0x0201, 0x80);
+    mem.WriteByteAtAddress(0x0202, 0x44); // 0x4480
+    mem.WriteByteAtAddress(0x4481, 0x84);
+
+    cpu.Reset(&mem);
+    var cpu_copy = cpu;
+    cpu.Y = 1;
+
+    // when:
+    var expected_cycles: u32 = 4;
+    var cycles_used = cpu.Execute(expected_cycles, &mem);
+
+    // then:
+    try testing.expectEqual(expected_cycles, cycles_used);
+    try testing.expectEqual(@as(u8, 0x84), cpu.A);
+    cpu_copy.PS.Z = 0;
+    cpu_copy.PS.N = 1;
+    try testing.expectEqual(cpu_copy.PS, cpu.PS);
+}
+
+test "LDA (Absolute, Y) can load a value into the A register when the reading address crosses the page boundary" {
+    var mem: Mem = Mem{};
+    var cpu: Cpu = Cpu{};
+
+    // given:
+    mem.WriteByteAtAddress(0xFFFC, 0x00);
+    mem.WriteByteAtAddress(0xFFFD, 0x02);
+    mem.WriteByteAtAddress(0x0200, @intFromEnum(Cpu.Opcode.lda_absolute_y));
+    mem.WriteByteAtAddress(0x0201, 0x02);
+    mem.WriteByteAtAddress(0x0202, 0x44); // 0x4402
+    mem.WriteByteAtAddress(0x4501, 0x84);
+    mem.WriteByteAtAddress(0x4502, 0xFF);
+
+    cpu.Reset(&mem);
+    var cpu_copy = cpu;
+    cpu.Y = 0xFF;
+
+    // when:
+    var expected_cycles: u32 = 5;
+    var cycles_used = cpu.Execute(expected_cycles, &mem);
+
+    // then:
+    try testing.expectEqual(expected_cycles, cycles_used);
+    try testing.expectEqual(@as(u8, 0x84), cpu.A);
+    cpu_copy.PS.Z = 0;
+    cpu_copy.PS.N = 1;
+    try testing.expectEqual(cpu_copy.PS, cpu.PS);
+}
+
+test "LDA ((Indirect, X)) can load a value into the A register" {
+    var mem: Mem = Mem{};
+    var cpu: Cpu = Cpu{};
+
+    // given:
+    mem.WriteByteAtAddress(0xFFFC, 0x00);
+    mem.WriteByteAtAddress(0xFFFD, 0x02);
+    mem.WriteByteAtAddress(0x0200, @intFromEnum(Cpu.Opcode.lda_indirect_x));
+    mem.WriteByteAtAddress(0x0201, 0x02);
+    mem.WriteByteAtAddress(0x0006, 0x00);
+    mem.WriteByteAtAddress(0x0007, 0x80);
+    mem.WriteByteAtAddress(0x8000, 0x84);
+
+    cpu.Reset(&mem);
+    var cpu_copy = cpu;
+    cpu.X = 0x04;
+
+    // when:
+    var expected_cycles: u32 = 6;
+    var cycles_used = cpu.Execute(expected_cycles, &mem);
+
+    // then:
+    try testing.expectEqual(expected_cycles, cycles_used);
+    try testing.expectEqual(@as(u8, 0x84), cpu.A);
+    cpu_copy.PS.Z = 0;
+    cpu_copy.PS.N = 1;
+    try testing.expectEqual(cpu_copy.PS, cpu.PS);
+}
+
+test "LDA ((Indirect, X)) can load a value into the A register when the reading address wraps around" {
+    var mem: Mem = Mem{};
+    var cpu: Cpu = Cpu{};
+
+    // given:
+    mem.WriteByteAtAddress(0xFFFC, 0x00);
+    mem.WriteByteAtAddress(0xFFFD, 0x02);
+    mem.WriteByteAtAddress(0x0200, @intFromEnum(Cpu.Opcode.lda_indirect_x));
+    mem.WriteByteAtAddress(0x0201, 0x06);
+    mem.WriteByteAtAddress(0x0005, 0x00);
+    mem.WriteByteAtAddress(0x0006, 0x80);
+    mem.WriteByteAtAddress(0x8000, 0x84);
+
+    cpu.Reset(&mem);
+    var cpu_copy = cpu;
+    cpu.X = 0xFF;
+
+    // when:
+    var expected_cycles: u32 = 6;
+    var cycles_used = cpu.Execute(expected_cycles, &mem);
+
+    // then:
+    try testing.expectEqual(expected_cycles, cycles_used);
+    try testing.expectEqual(@as(u8, 0x84), cpu.A);
+    cpu_copy.PS.Z = 0;
+    cpu_copy.PS.N = 1;
+    try testing.expectEqual(cpu_copy.PS, cpu.PS);
+}
+
+test "LDA ((Indirect), Y) can load a value into the A register" {
+    var mem: Mem = Mem{};
+    var cpu: Cpu = Cpu{};
+
+    // given:
+    mem.WriteByteAtAddress(0xFFFC, 0x00);
+    mem.WriteByteAtAddress(0xFFFD, 0x02);
+    mem.WriteByteAtAddress(0x0200, @intFromEnum(Cpu.Opcode.lda_indirect_y));
+    mem.WriteByteAtAddress(0x0201, 0x02);
+    mem.WriteByteAtAddress(0x0002, 0x00);
+    mem.WriteByteAtAddress(0x0003, 0x80);
+    mem.WriteByteAtAddress(0x8004, 0x84);
+
+    cpu.Reset(&mem);
+    var cpu_copy = cpu;
+    cpu.Y = 0x04;
+
+    // when:
+    var expected_cycles: u32 = 5;
+    var cycles_used = cpu.Execute(expected_cycles, &mem);
+
+    // then:
+    try testing.expectEqual(expected_cycles, cycles_used);
+    try testing.expectEqual(@as(u8, 0x84), cpu.A);
+    cpu_copy.PS.Z = 0;
+    cpu_copy.PS.N = 1;
+    try testing.expectEqual(cpu_copy.PS, cpu.PS);
+}
+
+test "LDA ((Indirect), Y) can load a value into the A register when the reading address crosses a page boundary" {
+    var mem: Mem = Mem{};
+    var cpu: Cpu = Cpu{};
+
+    // given:
+    mem.WriteByteAtAddress(0xFFFC, 0x00);
+    mem.WriteByteAtAddress(0xFFFD, 0x02);
+    mem.WriteByteAtAddress(0x0200, @intFromEnum(Cpu.Opcode.lda_indirect_y));
+    mem.WriteByteAtAddress(0x0201, 0x02);
+    mem.WriteByteAtAddress(0x0002, 0x02);
+    mem.WriteByteAtAddress(0x0003, 0x80);
+    mem.WriteByteAtAddress(0x8101, 0x84);
+
+    cpu.Reset(&mem);
+    var cpu_copy = cpu;
+    cpu.Y = 0xFF;
+
+    // when:
+    var expected_cycles: u32 = 6;
+    var cycles_used = cpu.Execute(expected_cycles, &mem);
+
+    // then:
+    try testing.expectEqual(expected_cycles, cycles_used);
+    try testing.expectEqual(@as(u8, 0x84), cpu.A);
+    cpu_copy.PS.Z = 0;
+    cpu_copy.PS.N = 1;
+    try testing.expectEqual(cpu_copy.PS, cpu.PS);
+}
