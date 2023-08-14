@@ -293,8 +293,10 @@ Y: u8 = 0, // Y register
 PS: StatusRegister = StatusRegister{},
 
 pub fn Reset(self: *Self, mem: *Mem) void {
-    _ = mem;
-    self.PC = 0xFFFC;
+    const pc_lower: u16 = mem.GetByteAtAddress(0xFFFC);
+    const pc_upper: u16 = mem.GetByteAtAddress(0xFFFD);
+
+    self.PC = (pc_upper << 8) | pc_lower;
     self.SP = 0x00;
     self.A = 0;
     self.X = 0;
@@ -320,7 +322,9 @@ pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) u32 {
         // If the instruction is not implemented, skip the instruction
         const possible_opcode = std.meta.intToEnum(Opcode, instruction);
         var op: Opcode = possible_opcode catch {
-            std.debug.print("Unmatched Instruction 0x{X:0>2}\n", .{instruction});
+            if (!@import("builtin").is_test) {
+                std.debug.print("Unmatched Instruction 0x{X:0>2}\n", .{instruction});
+            }
             continue; // skip occurs here
         };
         switch (op) {
@@ -341,12 +345,15 @@ pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) u32 {
             .jsr_absolute => {
                 var subroutine_address = self.FetchWord(&cycles, mem);
                 // save current address on the stack
+                // TODO: add func for the stack |  The second page of memory ($0100-$01FF) is reserved for the system stack and which cannot be relocated.
                 WriteWord(&cycles, mem, self.SP, self.PC - 1);
                 self.SP += 2;
                 self.PC = subroutine_address;
                 cycles += 1;
             },
-            else => {},
+            else => {
+                std.debug.print("Instruction 0x{X:0>2} ({?s}) does not have a registered handler.\n", .{ @intFromEnum(op), std.enums.tagName(Opcode, op) });
+            },
         }
         self.SetStatus(op);
     }
