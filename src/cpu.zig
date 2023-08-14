@@ -151,7 +151,7 @@ pub const Opcode = enum(u8) {
     // Load X Register
     ldx_immediate = 0xA2,
     ldx_zero_page = 0xA6,
-    ldx_zero_page_Y = 0xB6,
+    ldx_zero_page_y = 0xB6,
     ldx_absolute = 0xAE,
     ldx_absolute_y = 0xBE,
 
@@ -315,6 +315,9 @@ fn SetStatus(self: *Self, opcode: Opcode) void {
     }
 }
 
+// TODO: return error as well
+// TODO: create error set
+// TODO: return void or error (error for not enough cycles, excess cycles, invalid instruction)
 pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) u32 {
     var cycles: u32 = 0; // mutable
     while (cycles < requested_cycles) {
