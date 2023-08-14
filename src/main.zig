@@ -1,7 +1,7 @@
 const std = @import("std");
 
-const Cpu = @import("./cpu.zig");
-const Mem = @import("./mem.zig");
+pub const Cpu = @import("./cpu.zig");
+pub const Mem = @import("./mem.zig");
 
 pub fn main() !void {
     var mem: Mem = Mem{};
