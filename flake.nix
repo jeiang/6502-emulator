@@ -58,6 +58,7 @@
           nativeBuildInputs = with pkgs; [
             zigpkgs.master
             zls
+            lldb
           ];
         };
 
