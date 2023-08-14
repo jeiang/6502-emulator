@@ -271,7 +271,7 @@ pub const Opcode = enum(u8) {
     tya_implied = 0x98,
 };
 
-const StatusRegister = packed struct(u7) {
+pub const StatusRegister = packed struct(u7) {
     C: u1 = 0,
     Z: u1 = 0,
     I: u1 = 0,
@@ -308,13 +308,14 @@ fn SetStatus(self: *Self, opcode: Opcode) void {
             self.PS.Z = @intFromBool(self.A == 0);
             self.PS.N = @intFromBool((self.A & 0b1000_0000) > 0);
         },
+        .jsr_absolute => {},
         else => {},
     }
 }
 
-pub fn Execute(self: *Self, no_of_cycles: u32, mem: *Mem) void {
-    var cycles: u32 = no_of_cycles; // mutable
-    while (cycles > 0) {
+pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) u32 {
+    var cycles: u32 = 0; // mutable
+    while (cycles < requested_cycles) {
         var instruction: u8 = self.FetchByte(&cycles, mem);
         // If the instruction is not implemented, skip the instruction
         const possible_opcode = std.meta.intToEnum(Opcode, instruction);
@@ -334,7 +335,7 @@ pub fn Execute(self: *Self, no_of_cycles: u32, mem: *Mem) void {
             .lda_zero_page_x => {
                 const add_result = @addWithOverflow(self.FetchByte(&cycles, mem), self.X);
                 const zero_page_address = add_result[0];
-                cycles -= 1;
+                cycles += 1;
                 self.A = ReadByte(&cycles, mem, zero_page_address);
             },
             .jsr_absolute => {
@@ -343,12 +344,13 @@ pub fn Execute(self: *Self, no_of_cycles: u32, mem: *Mem) void {
                 WriteWord(&cycles, mem, self.SP, self.PC - 1);
                 self.SP += 2;
                 self.PC = subroutine_address;
-                cycles -= 1;
+                cycles += 1;
             },
             else => {},
         }
         self.SetStatus(op);
     }
+    return cycles;
 }
 
 fn FetchByte(self: *Self, cycles: *u32, mem: *Mem) u8 {
@@ -365,7 +367,7 @@ fn FetchWord(self: *Self, cycles: *u32, mem: *Mem) u16 {
 
 fn ReadByte(cycles: *u32, mem: *Mem, address: u16) u8 {
     const data = mem.GetByteAtAddress(address);
-    cycles.* -= 1;
+    cycles.* += 1;
     return data;
 }
 
@@ -377,7 +379,7 @@ fn ReadWord(cycles: *u32, mem: *Mem, start_address: u16) u16 {
 
 fn WriteByte(cycles: *u32, mem: *Mem, address: u16, data: u8) void {
     mem.WriteByteAtAddress(address, data);
-    cycles.* -= 1;
+    cycles.* += 1;
 }
 
 fn WriteWord(cycles: *u32, mem: *Mem, start_address: u16, data: u16) void {
