@@ -351,58 +351,76 @@ pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
                 cycles += 1;
             },
             .lda_immediate => {
-                self.A = self.FetchByte(&cycles, mem);
+                const addr = self.GetAddressFromImmediate(&cycles, mem);
+                self.A = ReadByte(&cycles, mem, addr);
             },
             .lda_zero_page => {
-                self.A = self.FetchByteZeroPage(&cycles, mem);
+                const addr = self.GetAddressFromZeroPage(&cycles, mem);
+                self.A = ReadByte(&cycles, mem, addr);
             },
             .lda_zero_page_x => {
-                self.A = self.FetchByteZeroPageX(&cycles, mem);
+                const addr = self.GetAddressFromZeroPageX(&cycles, mem);
+                self.A = ReadByte(&cycles, mem, addr);
             },
             .lda_absolute => {
-                self.A = self.FetchByteAbsolute(&cycles, mem);
+                const addr = self.GetAddressFromAbsolute(&cycles, mem);
+                self.A = ReadByte(&cycles, mem, addr);
             },
             .lda_absolute_x => {
-                self.A = self.FetchByteAbsoluteX(&cycles, mem);
+                const addr = self.GetAddressFromAbsoluteX(&cycles, mem);
+                self.A = ReadByte(&cycles, mem, addr);
             },
             .lda_absolute_y => {
-                self.A = self.FetchByteAbsoluteY(&cycles, mem);
+                const addr = self.GetAddressFromAbsoluteY(&cycles, mem);
+                self.A = ReadByte(&cycles, mem, addr);
             },
             .lda_indirect_x => {
-                self.A = self.FetchByteIndirectX(&cycles, mem);
+                const addr = self.GetAddressFromIndirectX(&cycles, mem);
+                self.A = ReadByte(&cycles, mem, addr);
             },
             .lda_indirect_y => {
-                self.A = self.FetchByteIndirectY(&cycles, mem);
+                const addr = self.GetAddressFromIndirectY(&cycles, mem);
+                self.A = ReadByte(&cycles, mem, addr);
             },
             .ldx_immediate => {
-                self.X = self.FetchByte(&cycles, mem);
+                const addr = self.GetAddressFromImmediate(&cycles, mem);
+                self.X = ReadByte(&cycles, mem, addr);
             },
             .ldx_zero_page => {
-                self.X = self.FetchByteZeroPage(&cycles, mem);
+                const addr = self.GetAddressFromZeroPage(&cycles, mem);
+                self.X = ReadByte(&cycles, mem, addr);
             },
             .ldx_zero_page_y => {
-                self.X = self.FetchByteZeroPageY(&cycles, mem);
+                const addr = self.GetAddressFromZeroPageY(&cycles, mem);
+                self.X = ReadByte(&cycles, mem, addr);
             },
             .ldx_absolute => {
-                self.X = self.FetchByteAbsolute(&cycles, mem);
+                const addr = self.GetAddressFromAbsolute(&cycles, mem);
+                self.X = ReadByte(&cycles, mem, addr);
             },
             .ldx_absolute_y => {
-                self.X = self.FetchByteAbsoluteY(&cycles, mem);
+                const addr = self.GetAddressFromAbsoluteY(&cycles, mem);
+                self.X = ReadByte(&cycles, mem, addr);
             },
             .ldy_immediate => {
-                self.Y = self.FetchByte(&cycles, mem);
+                const addr = self.GetAddressFromImmediate(&cycles, mem);
+                self.Y = ReadByte(&cycles, mem, addr);
             },
             .ldy_zero_page => {
-                self.Y = self.FetchByteZeroPage(&cycles, mem);
+                const addr = self.GetAddressFromZeroPage(&cycles, mem);
+                self.Y = ReadByte(&cycles, mem, addr);
             },
             .ldy_zero_page_x => {
-                self.Y = self.FetchByteZeroPageX(&cycles, mem);
+                const addr = self.GetAddressFromZeroPageX(&cycles, mem);
+                self.Y = ReadByte(&cycles, mem, addr);
             },
             .ldy_absolute => {
-                self.Y = self.FetchByteAbsolute(&cycles, mem);
+                const addr = self.GetAddressFromAbsolute(&cycles, mem);
+                self.Y = ReadByte(&cycles, mem, addr);
             },
             .ldy_absolute_x => {
-                self.Y = self.FetchByteAbsoluteX(&cycles, mem);
+                const addr = self.GetAddressFromAbsoluteX(&cycles, mem);
+                self.Y = ReadByte(&cycles, mem, addr);
             },
             else => {
                 return ExecuteError.UnhandledOpcode;
@@ -415,75 +433,87 @@ pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
     }
 }
 
-fn FetchByteZeroPage(self: *Self, cycles: *u32, mem: *Mem) u8 {
-    const byte = ReadByte(cycles, mem, self.PC);
+//==================================
+// Addressing Memory
+//==================================
+// TODO: document what takes how many cycles
+
+// NOTE: this is just to match the other instructions
+fn GetAddressFromImmediate(self: *Self, _: *u32, _: *Mem) u16 {
+    const addr = self.PC;
     self.PC += 1;
-    return ReadByte(cycles, mem, byte);
+    return addr;
 }
 
-fn FetchByteZeroPageX(self: *Self, cycles: *u32, mem: *Mem) u8 {
-    const byte = ReadByte(cycles, mem, self.PC);
-    self.PC += 1;
+fn GetAddressFromZeroPage(self: *Self, cycles: *u32, mem: *Mem) u16 {
+    return self.FetchByte(cycles, mem);
+}
+
+fn GetAddressFromZeroPageX(self: *Self, cycles: *u32, mem: *Mem) u16 {
+    const byte = self.FetchByte(cycles, mem);
     const add_result = @addWithOverflow(byte, self.X);
-    const zero_page_address = add_result[0];
+    const addr = add_result[0];
     cycles.* += 1;
-    return ReadByte(cycles, mem, zero_page_address);
+    return addr;
 }
 
-fn FetchByteZeroPageY(self: *Self, cycles: *u32, mem: *Mem) u8 {
-    const byte = ReadByte(cycles, mem, self.PC);
-    self.PC += 1;
+fn GetAddressFromZeroPageY(self: *Self, cycles: *u32, mem: *Mem) u16 {
+    const byte = self.FetchByte(cycles, mem);
     const add_result = @addWithOverflow(byte, self.Y);
-    const zero_page_address = add_result[0];
+    const addr = add_result[0];
     cycles.* += 1;
-    return ReadByte(cycles, mem, zero_page_address);
+    return addr;
 }
 
-fn FetchByteAbsolute(self: *Self, cycles: *u32, mem: *Mem) u8 {
-    const address = self.FetchWord(cycles, mem);
-    return ReadByte(cycles, mem, address);
+fn GetAddressFromAbsolute(self: *Self, cycles: *u32, mem: *Mem) u16 {
+    const addr = self.FetchWord(cycles, mem);
+    return addr;
 }
 
-fn FetchByteAbsoluteX(self: *Self, cycles: *u32, mem: *Mem) u8 {
-    var address: u16 = self.FetchWord(cycles, mem);
-    const upper = address & 0xFF00;
-    address += self.X;
-    if (upper != (address & 0xFF00)) {
+fn GetAddressFromAbsoluteX(self: *Self, cycles: *u32, mem: *Mem) u16 {
+    var addr: u16 = self.FetchWord(cycles, mem);
+    const upper = addr & 0xFF00;
+    addr += self.X;
+    if (upper != (addr & 0xFF00)) {
         cycles.* += 1;
     }
-    return ReadByte(cycles, mem, address);
+    return addr;
 }
 
-fn FetchByteAbsoluteY(self: *Self, cycles: *u32, mem: *Mem) u8 {
-    var address: u16 = self.FetchWord(cycles, mem);
-    const upper = address & 0xFF00;
-    address += self.Y;
-    if (upper != (address & 0xFF00)) {
+fn GetAddressFromAbsoluteY(self: *Self, cycles: *u32, mem: *Mem) u16 {
+    var addr: u16 = self.FetchWord(cycles, mem);
+    const upper = addr & 0xFF00;
+    addr += self.Y;
+    if (upper != (addr & 0xFF00)) {
         cycles.* += 1;
     }
-    return ReadByte(cycles, mem, address);
+    return addr;
 }
 
-fn FetchByteIndirectX(self: *Self, cycles: *u32, mem: *Mem) u8 {
+fn GetAddressFromIndirectX(self: *Self, cycles: *u32, mem: *Mem) u16 {
     var indirect_address: u8 = self.FetchByte(cycles, mem); // 1 cycle
     const add_result = @addWithOverflow(indirect_address, self.X); // 1 cycle
     indirect_address = add_result[0];
     cycles.* += 1;
-    var effective_address: u16 = ReadWord(cycles, mem, @intCast(indirect_address)); // 2 cycles
-    return ReadByte(cycles, mem, effective_address); // 1 cycle
+    var addr: u16 = ReadWord(cycles, mem, @intCast(indirect_address)); // 2 cycles
+    return addr; // 1 cycle
 }
 
-fn FetchByteIndirectY(self: *Self, cycles: *u32, mem: *Mem) u8 {
+fn GetAddressFromIndirectY(self: *Self, cycles: *u32, mem: *Mem) u16 {
     var indirect_address: u16 = @intCast(self.FetchByte(cycles, mem)); // 1 cycle
-    var effective_address: u16 = ReadWord(cycles, mem, indirect_address); // 2 cycles
-    const upper_effective_address: u16 = effective_address & 0xFF00;
-    const add_result = @addWithOverflow(effective_address, self.Y); // 1 cycle
-    effective_address = add_result[0];
-    if (upper_effective_address != (effective_address & 0xFF00)) {
+    var addr: u16 = ReadWord(cycles, mem, indirect_address); // 2 cycles
+    const upper_effective_address: u16 = addr & 0xFF00;
+    const add_result = @addWithOverflow(addr, self.Y); // 1 cycle
+    addr = add_result[0];
+    if (upper_effective_address != (addr & 0xFF00)) {
         cycles.* += 1;
     }
-    return ReadByte(cycles, mem, effective_address); // 1 cycle
+    return addr;
 }
+
+//==================================
+// Reading from Memory
+//==================================
 
 fn FetchByte(self: *Self, cycles: *u32, mem: *Mem) u8 {
     const byte = ReadByte(cycles, mem, self.PC);
@@ -508,6 +538,10 @@ fn ReadWord(cycles: *u32, mem: *Mem, start_address: u16) u16 {
     byte |= (@as(u16, ReadByte(cycles, mem, start_address + 1)) << 8);
     return byte;
 }
+
+//==================================
+// Writing to Memory
+//==================================
 
 fn WriteByte(cycles: *u32, mem: *Mem, address: u16, data: u8) void {
     mem.WriteByteAtAddress(address, data);
