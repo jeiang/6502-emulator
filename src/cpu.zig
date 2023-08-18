@@ -306,11 +306,15 @@ pub fn Reset(self: *Self, mem: *Mem) void {
 
 fn SetStatus(self: *Self, opcode: Opcode) void {
     switch (opcode) {
+        .jsr_absolute => {},
         .lda_immediate, .lda_zero_page, .lda_zero_page_x, .lda_absolute, .lda_absolute_x, .lda_absolute_y, .lda_indirect_x, .lda_indirect_y => {
             self.PS.Z = @intFromBool(self.A == 0);
             self.PS.N = @intFromBool((self.A & 0b1000_0000) > 0);
         },
-        .jsr_absolute => {},
+        .ldx_immediate, .ldx_zero_page, .ldx_zero_page_y, .ldx_absolute, .ldx_absolute_y => {
+            self.PS.Z = @intFromBool(self.X == 0);
+            self.PS.N = @intFromBool((self.X & 0b1000_0000) > 0);
+        },
         else => {},
     }
 }
@@ -333,6 +337,15 @@ pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
         const possible_opcode = std.meta.intToEnum(Opcode, instruction);
         var op: Opcode = possible_opcode catch return ExecuteError.InvalidInstruction;
         switch (op) {
+            .jsr_absolute => {
+                var subroutine_address = self.FetchWord(&cycles, mem);
+                // save current address on the stack
+                // TODO: add func for the stack |  The second page of memory ($0100-$01FF) is reserved for the system stack and which cannot be relocated.
+                WriteWord(&cycles, mem, self.SP, self.PC - 1);
+                self.SP += 2;
+                self.PC = subroutine_address;
+                cycles += 1;
+            },
             .lda_immediate => {
                 self.A = self.FetchByte(&cycles, mem);
             },
@@ -357,14 +370,20 @@ pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
             .lda_indirect_y => {
                 self.A = self.FetchByteIndirectY(&cycles, mem);
             },
-            .jsr_absolute => {
-                var subroutine_address = self.FetchWord(&cycles, mem);
-                // save current address on the stack
-                // TODO: add func for the stack |  The second page of memory ($0100-$01FF) is reserved for the system stack and which cannot be relocated.
-                WriteWord(&cycles, mem, self.SP, self.PC - 1);
-                self.SP += 2;
-                self.PC = subroutine_address;
-                cycles += 1;
+            .ldx_immediate => {
+                self.X = self.FetchByte(&cycles, mem);
+            },
+            .ldx_zero_page => {
+                self.X = self.FetchByteZeroPage(&cycles, mem);
+            },
+            .ldx_zero_page_y => {
+                self.X = self.FetchByteZeroPageY(&cycles, mem);
+            },
+            .ldx_absolute => {
+                self.X = self.FetchByteAbsolute(&cycles, mem);
+            },
+            .ldx_absolute_y => {
+                self.X = self.FetchByteAbsoluteY(&cycles, mem);
             },
             else => {
                 return ExecuteError.UnhandledOpcode;
@@ -387,6 +406,15 @@ fn FetchByteZeroPageX(self: *Self, cycles: *u32, mem: *Mem) u8 {
     const byte = ReadByte(cycles, mem, self.PC);
     self.PC += 1;
     const add_result = @addWithOverflow(byte, self.X);
+    const zero_page_address = add_result[0];
+    cycles.* += 1;
+    return ReadByte(cycles, mem, zero_page_address);
+}
+
+fn FetchByteZeroPageY(self: *Self, cycles: *u32, mem: *Mem) u8 {
+    const byte = ReadByte(cycles, mem, self.PC);
+    self.PC += 1;
+    const add_result = @addWithOverflow(byte, self.Y);
     const zero_page_address = add_result[0];
     cycles.* += 1;
     return ReadByte(cycles, mem, zero_page_address);
