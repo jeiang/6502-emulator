@@ -293,8 +293,8 @@ Y: u8 = 0, // Y register
 PS: StatusRegister = StatusRegister{},
 
 pub fn Reset(self: *Self, mem: *Mem) void {
-    const pc_lower: u16 = mem.GetByteAtAddress(0xFFFC);
-    const pc_upper: u16 = mem.GetByteAtAddress(0xFFFD);
+    const pc_lower: u16 = mem.ReadByteAtAddress(0xFFFC);
+    const pc_upper: u16 = mem.ReadByteAtAddress(0xFFFD);
 
     self.PC = (pc_upper << 8) | pc_lower;
     self.SP = 0x00;
@@ -315,21 +315,23 @@ fn SetStatus(self: *Self, opcode: Opcode) void {
     }
 }
 
-// TODO: return error as well
-// TODO: create error set
-// TODO: return void or error (error for not enough cycles, excess cycles, invalid instruction)
-pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) u32 {
+pub const ExecuteError = error{
+    InvalidInstruction,
+    UnhandledOpcode,
+    InsufficientCycles,
+};
+
+// TODO: make cycles not reliant on an input number
+// either
+// 1 - idk some sort of state machine???
+// 2 - suspend/resume (async my beloved where are you)
+// 3 - optional cycles count, have it go ham?
+pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void {
     var cycles: u32 = 0; // mutable
     while (cycles < requested_cycles) {
         var instruction: u8 = self.FetchByte(&cycles, mem);
-        // If the instruction is not implemented, skip the instruction
         const possible_opcode = std.meta.intToEnum(Opcode, instruction);
-        var op: Opcode = possible_opcode catch {
-            if (!@import("builtin").is_test) {
-                std.debug.print("Unmatched Instruction 0x{X:0>2}\n", .{instruction});
-            }
-            continue; // skip occurs here
-        };
+        var op: Opcode = possible_opcode catch return ExecuteError.InvalidInstruction;
         switch (op) {
             .lda_immediate => {
                 self.A = self.FetchByte(&cycles, mem);
@@ -365,16 +367,14 @@ pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) u32 {
                 cycles += 1;
             },
             else => {
-                if (!@import("builtin").is_test) {
-                    std.debug.print("Instruction 0x{X:0>2} ({?s}) does not have a registered handler.\n", .{ @intFromEnum(op), std.enums.tagName(Opcode, op) });
-                } else {
-                    @panic("invalid instruction");
-                }
+                return ExecuteError.UnhandledOpcode;
             },
         }
         self.SetStatus(op);
+        if (cycles > requested_cycles) {
+            return ExecuteError.InsufficientCycles;
+        }
     }
-    return cycles;
 }
 
 fn FetchByteZeroPage(self: *Self, cycles: *u32, mem: *Mem) u8 {
@@ -451,7 +451,7 @@ fn FetchWord(self: *Self, cycles: *u32, mem: *Mem) u16 {
 }
 
 fn ReadByte(cycles: *u32, mem: *Mem, address: u16) u8 {
-    const data = mem.GetByteAtAddress(address);
+    const data = mem.ReadByteAtAddress(address);
     cycles.* += 1;
     return data;
 }

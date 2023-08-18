@@ -1,6 +1,5 @@
 comptime {
-    _ = @import("./tests/cpu_execution.zig");
-    _ = @import("./tests/jsr.zig");
-    _ = @import("./tests/lda.zig");
-    _ = @import("./tests/ldx.zig");
+    _ = @import("./tests/cpu.zig");
+    _ = @import("./tests/mem.zig");
+    _ = @import("./tests/opcodes.zig");
 }
