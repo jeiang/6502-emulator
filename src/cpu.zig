@@ -315,6 +315,10 @@ fn SetStatus(self: *Self, opcode: Opcode) void {
             self.PS.Z = @intFromBool(self.X == 0);
             self.PS.N = @intFromBool((self.X & 0b1000_0000) > 0);
         },
+        .ldy_immediate, .ldy_zero_page, .ldy_zero_page_x, .ldy_absolute, .ldy_absolute_x => {
+            self.PS.Z = @intFromBool(self.Y == 0);
+            self.PS.N = @intFromBool((self.Y & 0b1000_0000) > 0);
+        },
         else => {},
     }
 }
@@ -384,6 +388,21 @@ pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
             },
             .ldx_absolute_y => {
                 self.X = self.FetchByteAbsoluteY(&cycles, mem);
+            },
+            .ldy_immediate => {
+                self.Y = self.FetchByte(&cycles, mem);
+            },
+            .ldy_zero_page => {
+                self.Y = self.FetchByteZeroPage(&cycles, mem);
+            },
+            .ldy_zero_page_x => {
+                self.Y = self.FetchByteZeroPageX(&cycles, mem);
+            },
+            .ldy_absolute => {
+                self.Y = self.FetchByteAbsolute(&cycles, mem);
+            },
+            .ldy_absolute_x => {
+                self.Y = self.FetchByteAbsoluteX(&cycles, mem);
             },
             else => {
                 return ExecuteError.UnhandledOpcode;
