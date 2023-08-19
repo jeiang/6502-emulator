@@ -246,15 +246,15 @@ fn pushWordToStack(self: *Self, cycles: *u32, mem: *Mem, data: u16) void {
 }
 
 fn popByteFromStack(self: *Self, cycles: *u32, mem: *Mem) u8 {
-    const addr = self.getTopOfStack();
     const result = @addWithOverflow(self.SP, 1);
+    const addr = stack_base_addr | @as(u16, @intCast(result[0]));
     self.SP = result[0];
     return readByte(cycles, mem, addr);
 }
 
-fn popWordFromStack(self: *Self, cycles: *u32, mem: *Mem) u8 {
-    const addr = self.getTopOfStack();
+fn popWordFromStack(self: *Self, cycles: *u32, mem: *Mem) u16 {
     const result = @addWithOverflow(self.SP, 2);
+    const addr = stack_base_addr | @as(u16, @intCast(result[0]));
     self.SP = result[0];
     return readWord(cycles, mem, addr);
 }
