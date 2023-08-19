@@ -8,6 +8,8 @@ const Mem = @import("./mem.zig");
 const stack_base_addr: u16 = 0x0100;
 
 pub const Opcode = @import("./opcodes.zig").Opcode;
+pub const Instruction = @import("./opcodes.zig").Instruction;
+pub const AddressingMode = @import("./opcodes.zig").AddressingMode;
 pub const StatusRegister = packed struct(u7) {
     C: u1 = 0,
     Z: u1 = 0,
@@ -41,23 +43,9 @@ pub fn Reset(self: *Self, mem: *Mem) void {
     self.PS = StatusRegister{};
 }
 
-fn SetStatus(self: *Self, opcode: Opcode) void {
-    switch (opcode) {
-        .jsr_absolute => {},
-        .lda_immediate, .lda_zero_page, .lda_zero_page_x, .lda_absolute, .lda_absolute_x, .lda_absolute_y, .lda_indexed_indirect, .lda_indirect_indexed => {
-            self.PS.Z = @intFromBool(self.A == 0);
-            self.PS.N = @intFromBool((self.A & 0b1000_0000) > 0);
-        },
-        .ldx_immediate, .ldx_zero_page, .ldx_zero_page_y, .ldx_absolute, .ldx_absolute_y => {
-            self.PS.Z = @intFromBool(self.X == 0);
-            self.PS.N = @intFromBool((self.X & 0b1000_0000) > 0);
-        },
-        .ldy_immediate, .ldy_zero_page, .ldy_zero_page_x, .ldy_absolute, .ldy_absolute_x => {
-            self.PS.Z = @intFromBool(self.Y == 0);
-            self.PS.N = @intFromBool((self.Y & 0b1000_0000) > 0);
-        },
-        else => {},
-    }
+fn SetZeroAndNegativeFlags(self: *Self, byte: u8) void {
+    self.PS.Z = @intFromBool(byte == 0);
+    self.PS.N = @intFromBool((byte & 0x80) > 0);
 }
 
 pub const ExecuteError = error{
@@ -74,11 +62,12 @@ pub const ExecuteError = error{
 pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void {
     var cycles: u32 = 0; // mutable
     while (cycles < requested_cycles) {
-        var instruction: u8 = self.FetchByte(&cycles, mem);
-        const possible_opcode = std.meta.intToEnum(Opcode, instruction);
+        var raw_opcode: u8 = self.FetchByte(&cycles, mem);
+        const possible_opcode = std.meta.intToEnum(Opcode, raw_opcode);
         var op: Opcode = possible_opcode catch return ExecuteError.InvalidInstruction;
         const addr = self.getOperandAddress(&cycles, mem, op);
-        switch (op.instruction()) {
+        const instruction = op.instruction();
+        switch (instruction) {
             .jsr => {
                 self.PushWordToStack(&cycles, mem, self.PC);
                 self.PC = addr;
@@ -86,12 +75,15 @@ pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
             },
             .lda => {
                 self.A = ReadByte(&cycles, mem, addr);
+                self.SetZeroAndNegativeFlags(instruction, self.A);
             },
             .ldx => {
                 self.X = ReadByte(&cycles, mem, addr);
+                self.SetZeroAndNegativeFlags(instruction, self.X);
             },
             .ldy => {
                 self.Y = ReadByte(&cycles, mem, addr);
+                self.SetZeroAndNegativeFlags(instruction, self.Y);
             },
             .sta => {
                 WriteByte(&cycles, mem, addr, self.A);
@@ -106,7 +98,6 @@ pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
                 return ExecuteError.UnhandledInstruction;
             },
         }
-        self.SetStatus(op);
         if (cycles > requested_cycles) {
             return ExecuteError.InsufficientCycles;
         }
