@@ -5,6 +5,8 @@ const std = @import("std");
 
 const Mem = @import("./mem.zig");
 
+const stack_base_addr: u16 = 0x0100;
+
 pub const Opcode = @import("./opcodes.zig").Opcode;
 pub const StatusRegister = packed struct(u7) {
     C: u1 = 0,
@@ -228,5 +230,36 @@ fn WriteWord(cycles: *u32, mem: *Mem, start_address: u16, data: u16) void {
     WriteByte(cycles, mem, start_address, lower);
     WriteByte(cycles, mem, start_address + 1, upper);
 }
-// TODO: add func to push to and pull from the stack
+
+//==================================
+// Stack Manipulation
+//==================================
 // The second page of memory ($0100-$01FF) is reserved for the system stack and which cannot be relocated.
+
+fn PushByteToStack(self: *Self, cycles: *u32, mem: *Mem, data: u8) void {
+    const addr = stack_base_addr | @as(u16, @intCast(self.SP));
+    const result = @addWithOverflow(self.SP, 1);
+    self.SP = result[0];
+    WriteByte(cycles, mem, addr, data);
+}
+
+fn PushWordToStack(self: *Self, cycles: *u32, mem: *Mem, data: u16) void {
+    const addr = stack_base_addr | @as(u16, @intCast(self.SP));
+    const result = @addWithOverflow(self.SP, 2);
+    self.SP = result[0];
+    WriteWord(cycles, mem, addr, data);
+}
+
+fn PopByteFromStack(self: *Self, cycles: *u32, mem: *Mem) u8 {
+    const addr = stack_base_addr | @as(u16, @intCast(self.SP));
+    const result = @subWithOverflow(self.SP, 1);
+    self.SP = result[0];
+    return ReadByte(cycles, mem, addr);
+}
+
+fn PopWordFromStack(self: *Self, cycles: *u32, mem: *Mem) u8 {
+    const addr = stack_base_addr | @as(u16, @intCast(self.SP));
+    const result = @subWithOverflow(self.SP, 2);
+    self.SP = result[0];
+    return ReadWord(cycles, mem, addr);
+}
