@@ -96,6 +96,12 @@ pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
             .sta => {
                 WriteByte(&cycles, mem, addr, self.A);
             },
+            .stx => {
+                WriteByte(&cycles, mem, addr, self.X);
+            },
+            .sty => {
+                WriteByte(&cycles, mem, addr, self.Y);
+            },
             else => {
                 return ExecuteError.UnhandledInstruction;
             },
