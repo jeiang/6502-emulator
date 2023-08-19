@@ -10,14 +10,15 @@ const stack_base_addr: u16 = 0x0100;
 pub const Opcode = @import("./opcodes.zig").Opcode;
 pub const Instruction = @import("./opcodes.zig").Instruction;
 pub const AddressingMode = @import("./opcodes.zig").AddressingMode;
-pub const StatusRegister = packed struct(u7) {
-    C: u1 = 0,
+pub const StatusRegister = packed struct(u8) {
+    C: u1 = 0, // Bit 0
     Z: u1 = 0,
     I: u1 = 0,
     D: u1 = 0,
     B: u1 = 0,
+    _: u1 = 1,
     V: u1 = 0,
-    N: u1 = 0,
+    N: u1 = 0, // Bit 7
 };
 
 PC: u16 = 0xFFFC, // Program Counter
