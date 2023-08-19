@@ -788,7 +788,7 @@ test "LDA ((Indirect, X)) can load a value into the A register" {
     // given:
     mem.setMemory(.{
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
-        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indirect_x), 0x0002 } },
+        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indexed_indirect), 0x0002 } },
         .{ .start_address = 0x0006, .bytes = .{0x8000} },
         .{ .start_address = 0x8000, .bytes = .{0x34} },
     });
@@ -819,7 +819,7 @@ test "LDA ((Indirect, X)) can load a value into the A register and set the Zero 
     // given:
     mem.setMemory(.{
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
-        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indirect_x), 0x0002 } },
+        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indexed_indirect), 0x0002 } },
         .{ .start_address = 0x0006, .bytes = .{0x8000} },
         .{ .start_address = 0x8000, .bytes = .{0x00} },
     });
@@ -850,7 +850,7 @@ test "LDA ((Indirect, X)) can load a value into the A register and set the Negat
     // given:
     mem.setMemory(.{
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
-        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indirect_x), 0x0002 } },
+        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indexed_indirect), 0x0002 } },
         .{ .start_address = 0x0006, .bytes = .{0x8000} },
         .{ .start_address = 0x8000, .bytes = .{0x84} },
     });
@@ -881,7 +881,7 @@ test "LDA ((Indirect, X)) can load a value into the A register when the reading 
     // given:
     mem.setMemory(.{
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
-        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indirect_x), 0x00FE } },
+        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indexed_indirect), 0x00FE } },
         .{ .start_address = 0x0002, .bytes = .{0x8000} },
         .{ .start_address = 0x8000, .bytes = .{0x34} },
     });
@@ -912,7 +912,7 @@ test "LDA ((Indirect, X)) can load a value into the A register when the reading 
     // given:
     mem.setMemory(.{
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
-        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indirect_x), 0x00FE } },
+        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indexed_indirect), 0x00FE } },
         .{ .start_address = 0x0002, .bytes = .{0x8000} },
         .{ .start_address = 0x8000, .bytes = .{0x00} },
     });
@@ -943,7 +943,7 @@ test "LDA ((Indirect, X)) can load a value into the A register when the reading 
     // given:
     mem.setMemory(.{
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
-        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indirect_x), 0x00FE } },
+        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indexed_indirect), 0x00FE } },
         .{ .start_address = 0x0002, .bytes = .{0x8000} },
         .{ .start_address = 0x8000, .bytes = .{0x84} },
     });
@@ -974,7 +974,7 @@ test "LDA ((Indirect), Y) can load a value into the A register" {
     // given:
     mem.setMemory(.{
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
-        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indirect_y), 0x0002 } },
+        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indirect_indexed), 0x0002 } },
         .{ .start_address = 0x0002, .bytes = .{0x8000} },
         .{ .start_address = 0x8004, .bytes = .{0x34} },
     });
@@ -1005,7 +1005,7 @@ test "LDA ((Indirect), Y) can load a value into the A register and set the Zero 
     // given:
     mem.setMemory(.{
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
-        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indirect_y), 0x0002 } },
+        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indirect_indexed), 0x0002 } },
         .{ .start_address = 0x0002, .bytes = .{0x8000} },
         .{ .start_address = 0x8004, .bytes = .{0x00} },
     });
@@ -1036,7 +1036,7 @@ test "LDA ((Indirect), Y) can load a value into the A register and set the Negat
     // given:
     mem.setMemory(.{
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
-        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indirect_y), 0x0002 } },
+        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indirect_indexed), 0x0002 } },
         .{ .start_address = 0x0002, .bytes = .{0x8000} },
         .{ .start_address = 0x8004, .bytes = .{0x84} },
     });
@@ -1067,7 +1067,7 @@ test "LDA ((Indirect), Y) can load a value into the A register when the reading 
     // given:
     mem.setMemory(.{
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
-        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indirect_y), 0x0002 } },
+        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indirect_indexed), 0x0002 } },
         .{ .start_address = 0x0002, .bytes = .{0x7FFE} },
         .{ .start_address = 0x8002, .bytes = .{0x34} },
     });
@@ -1098,7 +1098,7 @@ test "LDA ((Indirect), Y) can load a value into the A register when the reading 
     // given:
     mem.setMemory(.{
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
-        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indirect_y), 0x0002 } },
+        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indirect_indexed), 0x0002 } },
         .{ .start_address = 0x0002, .bytes = .{0x7FFE} },
         .{ .start_address = 0x8002, .bytes = .{0x00} },
     });
@@ -1129,7 +1129,7 @@ test "LDA ((Indirect), Y) can load a value into the A register when the reading 
     // given:
     mem.setMemory(.{
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
-        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indirect_y), 0x0002 } },
+        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_indirect_indexed), 0x0002 } },
         .{ .start_address = 0x0002, .bytes = .{0x7FFE} },
         .{ .start_address = 0x8002, .bytes = .{0x84} },
     });

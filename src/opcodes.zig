@@ -1,4 +1,80 @@
-// format: (assembly instruction)_(addressing mode)
+const std = @import("std");
+
+pub const AddressingMode = enum {
+    implied,
+    accumulator,
+    immediate,
+    zero_page,
+    zero_page_x,
+    zero_page_y,
+    relative,
+    absolute,
+    absolute_x,
+    absolute_y,
+    indirect,
+    indexed_indirect, // (Indirect, X)
+    indirect_indexed, // (Indirect), Y
+};
+
+pub const Instruction = enum {
+    adc,
+    @"and",
+    asl,
+    bcc,
+    bcs,
+    beq,
+    bit,
+    bmi,
+    bne,
+    bpl,
+    brk,
+    bvc,
+    bvs,
+    clc,
+    cld,
+    cli,
+    clv,
+    cmp,
+    cpx,
+    cpy,
+    dec,
+    dex,
+    dey,
+    eor,
+    inc,
+    inx,
+    iny,
+    jmp,
+    jsr,
+    lda,
+    ldx,
+    ldy,
+    lsr,
+    nop,
+    ora,
+    pha,
+    php,
+    pla,
+    plp,
+    rol,
+    ror,
+    rti,
+    rts,
+    sbc,
+    sec,
+    sed,
+    sei,
+    sta,
+    stx,
+    sty,
+    tax,
+    tay,
+    tsx,
+    txa,
+    txs,
+    tya,
+};
+
 pub const Opcode = enum(u8) {
     // Add with Carry
     adc_immediate = 0x69,
@@ -7,8 +83,8 @@ pub const Opcode = enum(u8) {
     adc_absolute = 0x6D,
     adc_absolute_x = 0x7D,
     adc_absolute_y = 0x79,
-    adc_indirect_x = 0x61,
-    adc_indirect_y = 0x71,
+    adc_indexed_indirect = 0x61,
+    adc_indirect_indexed = 0x71,
 
     // Logical And
     and_immediate = 0x29,
@@ -17,8 +93,8 @@ pub const Opcode = enum(u8) {
     and_absolute = 0x2D,
     and_absolute_x = 0x3D,
     and_absolute_y = 0x39,
-    and_indirect_x = 0x21,
-    and_indirect_y = 0x31,
+    and_indexed_indirect = 0x21,
+    and_indirect_indexed = 0x31,
 
     // Arithmetic Left Shift
     asl_accumulator = 0x0A,
@@ -77,8 +153,8 @@ pub const Opcode = enum(u8) {
     cmp_absolute = 0xCD,
     cmp_absolute_x = 0xDD,
     cmp_absolute_y = 0xD9,
-    cmp_indirect_x = 0xC1,
-    cmp_indirect_y = 0xD1,
+    cmp_indexed_indirect = 0xC1,
+    cmp_indirect_indexed = 0xD1,
 
     // Compare X Register
     cpx_immediate = 0xE0,
@@ -109,8 +185,8 @@ pub const Opcode = enum(u8) {
     eor_absolute = 0x4D,
     eor_absolute_x = 0x5D,
     eor_absolute_y = 0x59,
-    eor_indirect_x = 0x41,
-    eor_indirect_y = 0x51,
+    eor_indexed_indirect = 0x41,
+    eor_indirect_indexed = 0x51,
 
     // Increment Memory
     inc_zero_page = 0xE6,
@@ -138,8 +214,8 @@ pub const Opcode = enum(u8) {
     lda_absolute = 0xAD,
     lda_absolute_x = 0xBD,
     lda_absolute_y = 0xB9,
-    lda_indirect_x = 0xA1,
-    lda_indirect_y = 0xB1,
+    lda_indexed_indirect = 0xA1,
+    lda_indirect_indexed = 0xB1,
 
     // Load X Register
     ldx_immediate = 0xA2,
@@ -172,8 +248,8 @@ pub const Opcode = enum(u8) {
     ora_absolute = 0x0D,
     ora_absolute_x = 0x1D,
     ora_absolute_y = 0x19,
-    ora_indirect_x = 0x01,
-    ora_indirect_y = 0x11,
+    ora_indexed_indirect = 0x01,
+    ora_indirect_indexed = 0x11,
 
     // Push Accumulator
     pha_implied = 0x48,
@@ -214,8 +290,8 @@ pub const Opcode = enum(u8) {
     sbc_absolute = 0xED,
     sbc_absolute_x = 0xFD,
     sbc_absolute_y = 0xF9,
-    sbc_indirect_x = 0xE1,
-    sbc_indirect_y = 0xF1,
+    sbc_indexed_indirect = 0xE1,
+    sbc_indirect_indexed = 0xF1,
 
     // Set Carry Flag
     sec_implied = 0x38,
@@ -232,8 +308,8 @@ pub const Opcode = enum(u8) {
     sta_absolute = 0x8D,
     sta_absolute_x = 0x9D,
     sta_absolute_y = 0x99,
-    sta_indirect_x = 0x81,
-    sta_indirect_y = 0x91,
+    sta_indexed_indirect = 0x81,
+    sta_indirect_indexed = 0x91,
 
     // Store X Register
     stx_zero_page = 0x86,
@@ -262,4 +338,34 @@ pub const Opcode = enum(u8) {
 
     // Transfer Y to Accumulator
     tya_implied = 0x98,
+
+    pub fn addressingMode(self: *const @This()) AddressingMode {
+        // Generate a massive switch statement for each tag which maps to its addressing mode
+        switch (self.*) {
+            inline else => |tag| {
+                @setEvalBranchQuota(6000); // seems to be about enough
+                inline for (comptime std.enums.values(AddressingMode)) |mode| {
+                    if (comptime std.mem.eql(u8, @tagName(tag)[4..], @tagName(mode))) { // comptime eval should remove dead paths
+                        return mode;
+                    }
+                }
+            },
+        }
+        unreachable;
+    }
+
+    pub fn instruction(self: *const @This()) Instruction {
+        // Generate a massive switch statement for each tag which maps to its addressing mode
+        switch (self.*) {
+            inline else => |tag| {
+                @setEvalBranchQuota(20000); // seems to be about enough
+                inline for (comptime std.enums.values(Instruction)) |mode| {
+                    if (comptime std.mem.eql(u8, @tagName(tag)[0..3], @tagName(mode))) {
+                        return mode;
+                    }
+                }
+            },
+        }
+        unreachable;
+    }
 };

@@ -42,7 +42,7 @@ pub fn Reset(self: *Self, mem: *Mem) void {
 fn SetStatus(self: *Self, opcode: Opcode) void {
     switch (opcode) {
         .jsr_absolute => {},
-        .lda_immediate, .lda_zero_page, .lda_zero_page_x, .lda_absolute, .lda_absolute_x, .lda_absolute_y, .lda_indirect_x, .lda_indirect_y => {
+        .lda_immediate, .lda_zero_page, .lda_zero_page_x, .lda_absolute, .lda_absolute_x, .lda_absolute_y, .lda_indexed_indirect, .lda_indirect_indexed => {
             self.PS.Z = @intFromBool(self.A == 0);
             self.PS.N = @intFromBool((self.A & 0b1000_0000) > 0);
         },
@@ -60,7 +60,7 @@ fn SetStatus(self: *Self, opcode: Opcode) void {
 
 pub const ExecuteError = error{
     InvalidInstruction,
-    UnhandledOpcode,
+    UnhandledInstruction,
     InsufficientCycles,
 };
 
@@ -75,118 +75,30 @@ pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
         var instruction: u8 = self.FetchByte(&cycles, mem);
         const possible_opcode = std.meta.intToEnum(Opcode, instruction);
         var op: Opcode = possible_opcode catch return ExecuteError.InvalidInstruction;
-        switch (op) {
-            .jsr_absolute => {
-                var subroutine_address = self.FetchWord(&cycles, mem);
-                // save current address on the stack
-                // TODO: add func for the stack |  The second page of memory ($0100-$01FF) is reserved for the system stack and which cannot be relocated.
+        const addr = self.getOperandAddress(&cycles, mem, op);
+        switch (op.instruction()) {
+            .jsr => {
+                // TODO: handle jsr implied
+                // TODO: use stack func
                 WriteWord(&cycles, mem, self.SP, self.PC - 1);
                 self.SP += 2;
-                self.PC = subroutine_address;
+                self.PC = addr;
                 cycles += 1;
             },
-            .lda_immediate => {
-                const addr = self.GetAddressFromImmediate(&cycles, mem);
+            .lda => {
                 self.A = ReadByte(&cycles, mem, addr);
             },
-            .lda_zero_page => {
-                const addr = self.GetAddressFromZeroPage(&cycles, mem);
-                self.A = ReadByte(&cycles, mem, addr);
-            },
-            .lda_zero_page_x => {
-                const addr = self.GetAddressFromZeroPageX(&cycles, mem);
-                self.A = ReadByte(&cycles, mem, addr);
-            },
-            .lda_absolute => {
-                const addr = self.GetAddressFromAbsolute(&cycles, mem);
-                self.A = ReadByte(&cycles, mem, addr);
-            },
-            .lda_absolute_x => {
-                const addr = self.GetAddressFromAbsoluteX(&cycles, mem, true);
-                self.A = ReadByte(&cycles, mem, addr);
-            },
-            .lda_absolute_y => {
-                const addr = self.GetAddressFromAbsoluteY(&cycles, mem, true);
-                self.A = ReadByte(&cycles, mem, addr);
-            },
-            .lda_indirect_x => {
-                const addr = self.GetAddressFromIndirectX(&cycles, mem);
-                self.A = ReadByte(&cycles, mem, addr);
-            },
-            .lda_indirect_y => {
-                const addr = self.GetAddressFromIndirectY(&cycles, mem, true);
-                self.A = ReadByte(&cycles, mem, addr);
-            },
-            .ldx_immediate => {
-                const addr = self.GetAddressFromImmediate(&cycles, mem);
+            .ldx => {
                 self.X = ReadByte(&cycles, mem, addr);
             },
-            .ldx_zero_page => {
-                const addr = self.GetAddressFromZeroPage(&cycles, mem);
-                self.X = ReadByte(&cycles, mem, addr);
-            },
-            .ldx_zero_page_y => {
-                const addr = self.GetAddressFromZeroPageY(&cycles, mem);
-                self.X = ReadByte(&cycles, mem, addr);
-            },
-            .ldx_absolute => {
-                const addr = self.GetAddressFromAbsolute(&cycles, mem);
-                self.X = ReadByte(&cycles, mem, addr);
-            },
-            .ldx_absolute_y => {
-                const addr = self.GetAddressFromAbsoluteY(&cycles, mem, true);
-                self.X = ReadByte(&cycles, mem, addr);
-            },
-            .ldy_immediate => {
-                const addr = self.GetAddressFromImmediate(&cycles, mem);
+            .ldy => {
                 self.Y = ReadByte(&cycles, mem, addr);
             },
-            .ldy_zero_page => {
-                const addr = self.GetAddressFromZeroPage(&cycles, mem);
-                self.Y = ReadByte(&cycles, mem, addr);
-            },
-            .ldy_zero_page_x => {
-                const addr = self.GetAddressFromZeroPageX(&cycles, mem);
-                self.Y = ReadByte(&cycles, mem, addr);
-            },
-            .ldy_absolute => {
-                const addr = self.GetAddressFromAbsolute(&cycles, mem);
-                self.Y = ReadByte(&cycles, mem, addr);
-            },
-            .ldy_absolute_x => {
-                const addr = self.GetAddressFromAbsoluteX(&cycles, mem, true);
-                self.Y = ReadByte(&cycles, mem, addr);
-            },
-            .sta_zero_page => {
-                const addr = self.GetAddressFromZeroPage(&cycles, mem);
-                WriteByte(&cycles, mem, addr, self.A);
-            },
-            .sta_zero_page_x => {
-                const addr = self.GetAddressFromZeroPageX(&cycles, mem);
-                WriteByte(&cycles, mem, addr, self.A);
-            },
-            .sta_absolute => {
-                const addr = self.GetAddressFromAbsolute(&cycles, mem);
-                WriteByte(&cycles, mem, addr, self.A);
-            },
-            .sta_absolute_x => {
-                const addr = self.GetAddressFromAbsoluteX(&cycles, mem, false);
-                WriteByte(&cycles, mem, addr, self.A);
-            },
-            .sta_absolute_y => {
-                const addr = self.GetAddressFromAbsoluteY(&cycles, mem, false);
-                WriteByte(&cycles, mem, addr, self.A);
-            },
-            .sta_indirect_x => {
-                const addr = self.GetAddressFromIndirectX(&cycles, mem);
-                WriteByte(&cycles, mem, addr, self.A);
-            },
-            .sta_indirect_y => {
-                const addr = self.GetAddressFromIndirectY(&cycles, mem, false);
+            .sta => {
                 WriteByte(&cycles, mem, addr, self.A);
             },
             else => {
-                return ExecuteError.UnhandledOpcode;
+                return ExecuteError.UnhandledInstruction;
             },
         }
         self.SetStatus(op);
@@ -201,76 +113,75 @@ pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
 //==================================
 // TODO: document what takes how many cycles
 
-// NOTE: this is just to match the other instructions
-fn GetAddressFromImmediate(self: *Self, _: *u32, _: *Mem) u16 {
-    const addr = self.PC;
-    self.PC += 1;
-    return addr;
-}
-
-fn GetAddressFromZeroPage(self: *Self, cycles: *u32, mem: *Mem) u16 {
-    return self.FetchByte(cycles, mem);
-}
-
-fn GetAddressFromZeroPageX(self: *Self, cycles: *u32, mem: *Mem) u16 {
-    const byte = self.FetchByte(cycles, mem);
-    const add_result = @addWithOverflow(byte, self.X);
-    const addr = add_result[0];
-    cycles.* += 1;
-    return addr;
-}
-
-fn GetAddressFromZeroPageY(self: *Self, cycles: *u32, mem: *Mem) u16 {
-    const byte = self.FetchByte(cycles, mem);
-    const add_result = @addWithOverflow(byte, self.Y);
-    const addr = add_result[0];
-    cycles.* += 1;
-    return addr;
-}
-
-fn GetAddressFromAbsolute(self: *Self, cycles: *u32, mem: *Mem) u16 {
-    const addr = self.FetchWord(cycles, mem);
-    return addr;
-}
-
-fn GetAddressFromAbsoluteX(self: *Self, cycles: *u32, mem: *Mem, less_cycles_same_page: bool) u16 {
-    var addr: u16 = self.FetchWord(cycles, mem);
-    const upper = addr & 0xFF00;
-    addr += self.X;
-    if (!(less_cycles_same_page and upper == (addr & 0xFF00))) {
-        cycles.* += 1;
+// See https://llx.com/Neil/a2/opcodes.html#ins02 under instruction timing
+fn getOperandAddress(self: *Self, cycles: *u32, mem: *Mem, op: Opcode) u16 {
+    const mode = op.addressingMode();
+    const will_store_data = switch (op.instruction()) {
+        // idk where to put this logic otherwise
+        .asl, .dec, .inc, .lsr, .rol, .ror, .sta => true,
+        else => false,
+    };
+    var addr: u16 = undefined;
+    switch (mode) {
+        .implied, .accumulator, .immediate => {
+            addr = self.PC;
+            self.PC += 1;
+        },
+        .zero_page => {
+            addr = self.FetchByte(cycles, mem);
+        },
+        .zero_page_x => {
+            const byte = self.FetchByte(cycles, mem);
+            const add_result = @addWithOverflow(byte, self.X);
+            addr = add_result[0];
+            cycles.* += 1;
+        },
+        .zero_page_y => {
+            const byte = self.FetchByte(cycles, mem);
+            const add_result = @addWithOverflow(byte, self.Y);
+            addr = add_result[0];
+            cycles.* += 1;
+        },
+        .relative => {},
+        .absolute => {
+            addr = self.FetchWord(cycles, mem);
+        },
+        .absolute_x => {
+            addr = self.FetchWord(cycles, mem);
+            const upper = addr & 0xFF00;
+            addr += self.X;
+            if (will_store_data or upper != (addr & 0xFF00)) {
+                cycles.* += 1;
+            }
+        },
+        .absolute_y => {
+            addr = self.FetchWord(cycles, mem);
+            const upper = addr & 0xFF00;
+            addr += self.Y;
+            if (will_store_data or upper != (addr & 0xFF00)) {
+                cycles.* += 1;
+            }
+        },
+        .indirect => {},
+        .indexed_indirect => {
+            var indirect_address: u8 = self.FetchByte(cycles, mem); // 1 cycle
+            const add_result = @addWithOverflow(indirect_address, self.X); // 1 cycle
+            indirect_address = add_result[0];
+            cycles.* += 1;
+            addr = ReadWord(cycles, mem, @intCast(indirect_address)); // 2 cycles
+        },
+        .indirect_indexed => {
+            var indirect_address: u16 = @intCast(self.FetchByte(cycles, mem)); // 1 cycle
+            addr = ReadWord(cycles, mem, indirect_address); // 2 cycles
+            const upper: u16 = addr & 0xFF00;
+            const add_result = @addWithOverflow(addr, self.Y); // 1 cycle
+            addr = add_result[0];
+            if (will_store_data or upper != (addr & 0xFF00)) {
+                cycles.* += 1;
+            }
+        },
     }
-    return addr;
-}
 
-fn GetAddressFromAbsoluteY(self: *Self, cycles: *u32, mem: *Mem, less_cycles_same_page: bool) u16 {
-    var addr: u16 = self.FetchWord(cycles, mem);
-    const upper = addr & 0xFF00;
-    addr += self.Y;
-    if (!(less_cycles_same_page and upper == (addr & 0xFF00))) {
-        cycles.* += 1;
-    }
-    return addr;
-}
-
-fn GetAddressFromIndirectX(self: *Self, cycles: *u32, mem: *Mem) u16 {
-    var indirect_address: u8 = self.FetchByte(cycles, mem); // 1 cycle
-    const add_result = @addWithOverflow(indirect_address, self.X); // 1 cycle
-    indirect_address = add_result[0];
-    cycles.* += 1;
-    var addr: u16 = ReadWord(cycles, mem, @intCast(indirect_address)); // 2 cycles
-    return addr; // 1 cycle
-}
-
-fn GetAddressFromIndirectY(self: *Self, cycles: *u32, mem: *Mem, less_cycles_same_page: bool) u16 {
-    var indirect_address: u16 = @intCast(self.FetchByte(cycles, mem)); // 1 cycle
-    var addr: u16 = ReadWord(cycles, mem, indirect_address); // 2 cycles
-    const upper_addr: u16 = addr & 0xFF00;
-    const add_result = @addWithOverflow(addr, self.Y); // 1 cycle
-    addr = add_result[0];
-    if (!(less_cycles_same_page and upper_addr == (addr & 0xFF00))) {
-        cycles.* += 1;
-    }
     return addr;
 }
 
@@ -317,3 +228,5 @@ fn WriteWord(cycles: *u32, mem: *Mem, start_address: u16, data: u16) void {
     WriteByte(cycles, mem, start_address, lower);
     WriteByte(cycles, mem, start_address + 1, upper);
 }
+// TODO: add func to push to and pull from the stack
+// The second page of memory ($0100-$01FF) is reserved for the system stack and which cannot be relocated.

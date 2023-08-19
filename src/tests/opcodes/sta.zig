@@ -144,7 +144,7 @@ test "STA ((Indirect, X)) can store a value from the A register" {
     // given:
     mem.setMemory(.{
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
-        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.sta_indirect_x), 0x20 } },
+        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.sta_indexed_indirect), 0x20 } },
         .{ .start_address = 0x0024, .bytes = .{0x8000} },
     });
     cpu.Reset(&mem);
@@ -172,7 +172,7 @@ test "STA ((Indirect), Y) can store a value from the A register" {
     // given:
     mem.setMemory(.{
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
-        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.sta_indirect_y), 0x20 } },
+        .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.sta_indirect_indexed), 0x20 } },
         .{ .start_address = 0x0020, .bytes = .{0x8000} },
     });
     cpu.Reset(&mem);
