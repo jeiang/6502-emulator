@@ -13,21 +13,21 @@ test "STA (Zero Page) can store a value from the A register" {
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
         .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.sta_zero_page), 0x20 } },
     });
-    cpu.Reset(&mem);
+    cpu.reset(&mem);
     cpu.A = 0xAA;
 
     var expected_cpu = cpu;
 
     // when:
     var expected_cycles: u32 = 3;
-    var result = cpu.Execute(expected_cycles, &mem);
+    var result = cpu.execute(expected_cycles, &mem);
 
     // then:
     expected_cpu.PC += 2;
 
     try std.testing.expectEqual(@as(Cpu.ExecuteError!void, void{}), result);
     try std.testing.expectEqualDeep(expected_cpu, cpu);
-    try std.testing.expectEqual(@as(u8, 0xAA), mem.ReadByteAtAddress(0x0020));
+    try std.testing.expectEqual(@as(u8, 0xAA), mem.readByteAtAddress(0x0020));
 }
 
 test "STA (Zero Page, X) can store a value from the A register" {
@@ -39,7 +39,7 @@ test "STA (Zero Page, X) can store a value from the A register" {
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
         .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.sta_zero_page_x), 0x20 } },
     });
-    cpu.Reset(&mem);
+    cpu.reset(&mem);
     cpu.A = 0xAA;
     cpu.X = 0x04;
 
@@ -47,14 +47,14 @@ test "STA (Zero Page, X) can store a value from the A register" {
 
     // when:
     var expected_cycles: u32 = 4;
-    var result = cpu.Execute(expected_cycles, &mem);
+    var result = cpu.execute(expected_cycles, &mem);
 
     // then:
     expected_cpu.PC += 2;
 
     try std.testing.expectEqual(@as(Cpu.ExecuteError!void, void{}), result);
     try std.testing.expectEqualDeep(expected_cpu, cpu);
-    try std.testing.expectEqual(@as(u8, 0xAA), mem.ReadByteAtAddress(0x0024));
+    try std.testing.expectEqual(@as(u8, 0xAA), mem.readByteAtAddress(0x0024));
 }
 
 test "STA (Absolute) can store a value from the A register" {
@@ -66,21 +66,21 @@ test "STA (Absolute) can store a value from the A register" {
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
         .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.sta_absolute), 0x8000 } },
     });
-    cpu.Reset(&mem);
+    cpu.reset(&mem);
     cpu.A = 0xAA;
 
     var expected_cpu = cpu;
 
     // when:
     var expected_cycles: u32 = 4;
-    var result = cpu.Execute(expected_cycles, &mem);
+    var result = cpu.execute(expected_cycles, &mem);
 
     // then:
     expected_cpu.PC += 3;
 
     try std.testing.expectEqual(@as(Cpu.ExecuteError!void, void{}), result);
     try std.testing.expectEqualDeep(expected_cpu, cpu);
-    try std.testing.expectEqual(@as(u8, 0xAA), mem.ReadByteAtAddress(0x8000));
+    try std.testing.expectEqual(@as(u8, 0xAA), mem.readByteAtAddress(0x8000));
 }
 
 test "STA (Absolute, X) can store a value from the A register" {
@@ -92,7 +92,7 @@ test "STA (Absolute, X) can store a value from the A register" {
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
         .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.sta_absolute_x), 0x8000 } },
     });
-    cpu.Reset(&mem);
+    cpu.reset(&mem);
     cpu.A = 0xAA;
     cpu.X = 0x04;
 
@@ -100,14 +100,14 @@ test "STA (Absolute, X) can store a value from the A register" {
 
     // when:
     var expected_cycles: u32 = 5;
-    var result = cpu.Execute(expected_cycles, &mem);
+    var result = cpu.execute(expected_cycles, &mem);
 
     // then:
     expected_cpu.PC += 3;
 
     try std.testing.expectEqual(@as(Cpu.ExecuteError!void, void{}), result);
     try std.testing.expectEqualDeep(expected_cpu, cpu);
-    try std.testing.expectEqual(@as(u8, 0xAA), mem.ReadByteAtAddress(0x8004));
+    try std.testing.expectEqual(@as(u8, 0xAA), mem.readByteAtAddress(0x8004));
 }
 
 test "STA (Absolute, Y) can store a value from the A register" {
@@ -119,7 +119,7 @@ test "STA (Absolute, Y) can store a value from the A register" {
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
         .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.sta_absolute_y), 0x8000 } },
     });
-    cpu.Reset(&mem);
+    cpu.reset(&mem);
     cpu.A = 0xAA;
     cpu.Y = 0x04;
 
@@ -127,14 +127,14 @@ test "STA (Absolute, Y) can store a value from the A register" {
 
     // when:
     var expected_cycles: u32 = 5;
-    var result = cpu.Execute(expected_cycles, &mem);
+    var result = cpu.execute(expected_cycles, &mem);
 
     // then:
     expected_cpu.PC += 3;
 
     try std.testing.expectEqual(@as(Cpu.ExecuteError!void, void{}), result);
     try std.testing.expectEqualDeep(expected_cpu, cpu);
-    try std.testing.expectEqual(@as(u8, 0xAA), mem.ReadByteAtAddress(0x8004));
+    try std.testing.expectEqual(@as(u8, 0xAA), mem.readByteAtAddress(0x8004));
 }
 
 test "STA ((Indirect, X)) can store a value from the A register" {
@@ -147,7 +147,7 @@ test "STA ((Indirect, X)) can store a value from the A register" {
         .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.sta_indexed_indirect), 0x20 } },
         .{ .start_address = 0x0024, .bytes = .{0x8000} },
     });
-    cpu.Reset(&mem);
+    cpu.reset(&mem);
     cpu.A = 0xAA;
     cpu.X = 0x04;
 
@@ -155,14 +155,14 @@ test "STA ((Indirect, X)) can store a value from the A register" {
 
     // when:
     var expected_cycles: u32 = 6;
-    var result = cpu.Execute(expected_cycles, &mem);
+    var result = cpu.execute(expected_cycles, &mem);
 
     // then:
     expected_cpu.PC += 2;
 
     try std.testing.expectEqual(@as(Cpu.ExecuteError!void, void{}), result);
     try std.testing.expectEqualDeep(expected_cpu, cpu);
-    try std.testing.expectEqual(@as(u8, 0xAA), mem.ReadByteAtAddress(0x8000));
+    try std.testing.expectEqual(@as(u8, 0xAA), mem.readByteAtAddress(0x8000));
 }
 
 test "STA ((Indirect), Y) can store a value from the A register" {
@@ -175,7 +175,7 @@ test "STA ((Indirect), Y) can store a value from the A register" {
         .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.sta_indirect_indexed), 0x20 } },
         .{ .start_address = 0x0020, .bytes = .{0x8000} },
     });
-    cpu.Reset(&mem);
+    cpu.reset(&mem);
     cpu.A = 0xAA;
     cpu.Y = 0x04;
 
@@ -183,12 +183,12 @@ test "STA ((Indirect), Y) can store a value from the A register" {
 
     // when:
     var expected_cycles: u32 = 6;
-    var result = cpu.Execute(expected_cycles, &mem);
+    var result = cpu.execute(expected_cycles, &mem);
 
     // then:
     expected_cpu.PC += 2;
 
     try std.testing.expectEqual(@as(Cpu.ExecuteError!void, void{}), result);
     try std.testing.expectEqualDeep(expected_cpu, cpu);
-    try std.testing.expectEqual(@as(u8, 0xAA), mem.ReadByteAtAddress(0x8004));
+    try std.testing.expectEqual(@as(u8, 0xAA), mem.readByteAtAddress(0x8004));
 }

@@ -21,7 +21,7 @@ pub const StatusRegister = packed struct(u7) {
 };
 
 PC: u16 = 0xFFFC, // Program Counter
-SP: u8 = 0xFF, // Stack Pointer
+SP: u8 = 0xFE, // Stack Pointer
 
 // Registers
 A: u8 = 0, // Accumulator
@@ -31,19 +31,19 @@ Y: u8 = 0, // Y register
 // Processor Status Flags
 PS: StatusRegister = StatusRegister{},
 
-pub fn Reset(self: *Self, mem: *Mem) void {
-    const pc_lower: u16 = mem.ReadByteAtAddress(0xFFFC);
-    const pc_upper: u16 = mem.ReadByteAtAddress(0xFFFD);
+pub fn reset(self: *Self, mem: *Mem) void {
+    const pc_lower: u16 = mem.readByteAtAddress(0xFFFC);
+    const pc_upper: u16 = mem.readByteAtAddress(0xFFFD);
 
     self.PC = (pc_upper << 8) | pc_lower;
-    self.SP = 0x00;
+    self.SP = 0xFE;
     self.A = 0;
     self.X = 0;
     self.Y = 0;
     self.PS = StatusRegister{};
 }
 
-fn SetZeroAndNegativeFlags(self: *Self, byte: u8) void {
+fn setZeroAndNegativeFlags(self: *Self, byte: u8) void {
     self.PS.Z = @intFromBool(byte == 0);
     self.PS.N = @intFromBool((byte & 0x80) > 0);
 }
@@ -59,40 +59,40 @@ pub const ExecuteError = error{
 // 1 - idk some sort of state machine???
 // 2 - suspend/resume (async my beloved where are you)
 // 3 - optional cycles count, have it go ham?
-pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void {
+pub fn execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void {
     var cycles: u32 = 0; // mutable
     while (cycles < requested_cycles) {
-        var raw_opcode: u8 = self.FetchByte(&cycles, mem);
+        var raw_opcode: u8 = self.fetchByte(&cycles, mem);
         const possible_opcode = std.meta.intToEnum(Opcode, raw_opcode);
         var op: Opcode = possible_opcode catch return ExecuteError.InvalidInstruction;
         const addr = self.getOperandAddress(&cycles, mem, op);
         const instruction = op.instruction();
         switch (instruction) {
             .jsr => {
-                self.PushWordToStack(&cycles, mem, self.PC);
+                self.pushWordToStack(&cycles, mem, self.PC);
                 self.PC = addr;
                 cycles += 1;
             },
             .lda => {
-                self.A = ReadByte(&cycles, mem, addr);
-                self.SetZeroAndNegativeFlags(instruction, self.A);
+                self.A = readByte(&cycles, mem, addr);
+                self.setZeroAndNegativeFlags(self.A);
             },
             .ldx => {
-                self.X = ReadByte(&cycles, mem, addr);
-                self.SetZeroAndNegativeFlags(instruction, self.X);
+                self.X = readByte(&cycles, mem, addr);
+                self.setZeroAndNegativeFlags(self.X);
             },
             .ldy => {
-                self.Y = ReadByte(&cycles, mem, addr);
-                self.SetZeroAndNegativeFlags(instruction, self.Y);
+                self.Y = readByte(&cycles, mem, addr);
+                self.setZeroAndNegativeFlags(self.Y);
             },
             .sta => {
-                WriteByte(&cycles, mem, addr, self.A);
+                writeByte(&cycles, mem, addr, self.A);
             },
             .stx => {
-                WriteByte(&cycles, mem, addr, self.X);
+                writeByte(&cycles, mem, addr, self.X);
             },
             .sty => {
-                WriteByte(&cycles, mem, addr, self.Y);
+                writeByte(&cycles, mem, addr, self.Y);
             },
             else => {
                 return ExecuteError.UnhandledInstruction;
@@ -124,26 +124,26 @@ fn getOperandAddress(self: *Self, cycles: *u32, mem: *Mem, op: Opcode) u16 {
             self.PC += 1;
         },
         .zero_page => {
-            addr = self.FetchByte(cycles, mem);
+            addr = self.fetchByte(cycles, mem);
         },
         .zero_page_x => {
-            const byte = self.FetchByte(cycles, mem);
+            const byte = self.fetchByte(cycles, mem);
             const add_result = @addWithOverflow(byte, self.X);
             addr = add_result[0];
             cycles.* += 1;
         },
         .zero_page_y => {
-            const byte = self.FetchByte(cycles, mem);
+            const byte = self.fetchByte(cycles, mem);
             const add_result = @addWithOverflow(byte, self.Y);
             addr = add_result[0];
             cycles.* += 1;
         },
         .relative => {},
         .absolute => {
-            addr = self.FetchWord(cycles, mem);
+            addr = self.fetchWord(cycles, mem);
         },
         .absolute_x => {
-            addr = self.FetchWord(cycles, mem);
+            addr = self.fetchWord(cycles, mem);
             const upper = addr & 0xFF00;
             addr += self.X;
             if (will_store_data or upper != (addr & 0xFF00)) {
@@ -151,7 +151,7 @@ fn getOperandAddress(self: *Self, cycles: *u32, mem: *Mem, op: Opcode) u16 {
             }
         },
         .absolute_y => {
-            addr = self.FetchWord(cycles, mem);
+            addr = self.fetchWord(cycles, mem);
             const upper = addr & 0xFF00;
             addr += self.Y;
             if (will_store_data or upper != (addr & 0xFF00)) {
@@ -160,15 +160,15 @@ fn getOperandAddress(self: *Self, cycles: *u32, mem: *Mem, op: Opcode) u16 {
         },
         .indirect => {},
         .indexed_indirect => {
-            var indirect_address: u8 = self.FetchByte(cycles, mem); // 1 cycle
+            var indirect_address: u8 = self.fetchByte(cycles, mem); // 1 cycle
             const add_result = @addWithOverflow(indirect_address, self.X); // 1 cycle
             indirect_address = add_result[0];
             cycles.* += 1;
-            addr = ReadWord(cycles, mem, @intCast(indirect_address)); // 2 cycles
+            addr = readWord(cycles, mem, @intCast(indirect_address)); // 2 cycles
         },
         .indirect_indexed => {
-            var indirect_address: u16 = @intCast(self.FetchByte(cycles, mem)); // 1 cycle
-            addr = ReadWord(cycles, mem, indirect_address); // 2 cycles
+            var indirect_address: u16 = @intCast(self.fetchByte(cycles, mem)); // 1 cycle
+            addr = readWord(cycles, mem, indirect_address); // 2 cycles
             const upper: u16 = addr & 0xFF00;
             const add_result = @addWithOverflow(addr, self.Y); // 1 cycle
             addr = add_result[0];
@@ -185,27 +185,27 @@ fn getOperandAddress(self: *Self, cycles: *u32, mem: *Mem, op: Opcode) u16 {
 // Reading from Memory
 //==================================
 
-fn FetchByte(self: *Self, cycles: *u32, mem: *Mem) u8 {
-    const byte = ReadByte(cycles, mem, self.PC);
+fn fetchByte(self: *Self, cycles: *u32, mem: *Mem) u8 {
+    const byte = readByte(cycles, mem, self.PC);
     self.PC += 1;
     return byte;
 }
 
-fn FetchWord(self: *Self, cycles: *u32, mem: *Mem) u16 {
-    var byte = ReadWord(cycles, mem, self.PC);
+fn fetchWord(self: *Self, cycles: *u32, mem: *Mem) u16 {
+    var byte = readWord(cycles, mem, self.PC);
     self.PC += 2;
     return byte;
 }
 
-fn ReadByte(cycles: *u32, mem: *Mem, address: u16) u8 {
-    const data = mem.ReadByteAtAddress(address);
+fn readByte(cycles: *u32, mem: *Mem, address: u16) u8 {
+    const data = mem.readByteAtAddress(address);
     cycles.* += 1;
     return data;
 }
 
-fn ReadWord(cycles: *u32, mem: *Mem, start_address: u16) u16 {
-    var byte: u16 = ReadByte(cycles, mem, start_address);
-    byte |= (@as(u16, ReadByte(cycles, mem, start_address + 1)) << 8);
+fn readWord(cycles: *u32, mem: *Mem, start_address: u16) u16 {
+    var byte: u16 = readByte(cycles, mem, start_address);
+    byte |= (@as(u16, readByte(cycles, mem, start_address + 1)) << 8);
     return byte;
 }
 
@@ -213,16 +213,16 @@ fn ReadWord(cycles: *u32, mem: *Mem, start_address: u16) u16 {
 // Writing to Memory
 //==================================
 
-fn WriteByte(cycles: *u32, mem: *Mem, address: u16, data: u8) void {
-    mem.WriteByteAtAddress(address, data);
+fn writeByte(cycles: *u32, mem: *Mem, address: u16, data: u8) void {
+    mem.writeByteAtAddress(address, data);
     cycles.* += 1;
 }
 
-fn WriteWord(cycles: *u32, mem: *Mem, start_address: u16, data: u16) void {
+fn writeWord(cycles: *u32, mem: *Mem, start_address: u16, data: u16) void {
     const upper: u8 = @truncate(data >> 8);
     const lower: u8 = @truncate(data);
-    WriteByte(cycles, mem, start_address, lower);
-    WriteByte(cycles, mem, start_address + 1, upper);
+    writeByte(cycles, mem, start_address, lower);
+    writeByte(cycles, mem, start_address + 1, upper);
 }
 
 //==================================
@@ -230,34 +230,46 @@ fn WriteWord(cycles: *u32, mem: *Mem, start_address: u16, data: u16) void {
 //==================================
 // The second page of memory ($0100-$01FF) is reserved for the system stack and which cannot be relocated.
 
-fn PushByteToStack(self: *Self, cycles: *u32, mem: *Mem, data: u8) void {
-    const addr = stack_base_addr | @as(u16, @intCast(self.SP));
-    const result = @addWithOverflow(self.SP, 1);
-    self.SP = result[0];
-    WriteByte(cycles, mem, addr, data);
-}
-
-fn PushWordToStack(self: *Self, cycles: *u32, mem: *Mem, data: u16) void {
-    const addr = stack_base_addr | @as(u16, @intCast(self.SP));
-    const result = @addWithOverflow(self.SP, 2);
-    self.SP = result[0];
-    WriteWord(cycles, mem, addr, data);
-}
-
-fn PopByteFromStack(self: *Self, cycles: *u32, mem: *Mem) u8 {
-    const addr = stack_base_addr | @as(u16, @intCast(self.SP));
+fn pushByteToStack(self: *Self, cycles: *u32, mem: *Mem, data: u8) void {
+    const addr = self.getTopOfStack();
     const result = @subWithOverflow(self.SP, 1);
     self.SP = result[0];
-    return ReadByte(cycles, mem, addr);
+    writeByte(cycles, mem, addr, data);
 }
 
-fn PopWordFromStack(self: *Self, cycles: *u32, mem: *Mem) u8 {
-    const addr = stack_base_addr | @as(u16, @intCast(self.SP));
+fn pushWordToStack(self: *Self, cycles: *u32, mem: *Mem, data: u16) void {
+    const addr = self.getTopOfStack();
     const result = @subWithOverflow(self.SP, 2);
     self.SP = result[0];
-    return ReadWord(cycles, mem, addr);
+    writeWord(cycles, mem, addr, data);
 }
 
-pub fn GetTopOfStack(self: *Self) u16 {
+fn popByteFromStack(self: *Self, cycles: *u32, mem: *Mem) u8 {
+    const addr = self.getTopOfStack();
+    const result = @addWithOverflow(self.SP, 1);
+    self.SP = result[0];
+    return readByte(cycles, mem, addr);
+}
+
+fn popWordFromStack(self: *Self, cycles: *u32, mem: *Mem) u8 {
+    const addr = self.getTopOfStack();
+    const result = @addWithOverflow(self.SP, 2);
+    self.SP = result[0];
+    return readWord(cycles, mem, addr);
+}
+
+pub fn getTopOfStack(self: *Self) u16 {
     return stack_base_addr | @as(u16, @intCast(self.SP));
+}
+
+pub fn peekByteOnStack(self: *Self, mem: *Mem) u8 {
+    const result = @addWithOverflow(self.SP, 1);
+    const addr = stack_base_addr | @as(u16, @intCast(result[0]));
+    return mem.readByteAtAddress(addr);
+}
+
+pub fn peekWordOnStack(self: *Self, mem: *Mem) u16 {
+    const result = @addWithOverflow(self.SP, 2);
+    const addr = stack_base_addr | @as(u16, @intCast(result[0]));
+    return mem.readWordAtAddress(addr);
 }

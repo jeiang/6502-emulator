@@ -9,11 +9,11 @@ test "CPU does nothing when executing zero cycles" {
     var cpu: Cpu = Cpu{};
 
     // given:
-    cpu.Reset(&mem);
+    cpu.reset(&mem);
 
     // when:
     var expected_cycles: u32 = 0;
-    var result = cpu.Execute(expected_cycles, &mem);
+    var result = cpu.execute(expected_cycles, &mem);
 
     // then:
     result catch |err| return err; // i.e. no error
@@ -28,11 +28,11 @@ test "CPU cannot execute more cycles than requested if instruction needs more cy
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
         .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.lda_immediate), 0x84 } },
     });
-    cpu.Reset(&mem);
+    cpu.reset(&mem);
 
     // when:
     var expected_cycles: u32 = 1;
-    var result = cpu.Execute(expected_cycles, &mem);
+    var result = cpu.execute(expected_cycles, &mem);
 
     // then:
     try std.testing.expectError(Cpu.ExecuteError.InsufficientCycles, result);

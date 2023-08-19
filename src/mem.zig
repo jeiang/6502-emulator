@@ -5,32 +5,32 @@ const Self = @This();
 
 data: [MAX_MEM]u8 = [_]u8{0} ** MAX_MEM,
 
-pub fn Initialize(self: *Self) void {
+pub fn init(self: *Self) void {
     @memset(self.data, 0);
 }
 
-pub fn WriteByteAtAddress(self: *Self, address: u16, data: u8) void {
+pub fn writeByteAtAddress(self: *Self, address: u16, data: u8) void {
     self.data[address] = data;
 }
 
-pub fn WriteWordAtAddress(self: *Self, address: u16, data: u16) void {
+pub fn writeWordAtAddress(self: *Self, address: u16, data: u16) void {
     self.data[address] = @truncate(data);
     if (address + 1 < self.data.len) {
         self.data[address + 1] = @truncate(data >> 8);
     }
 }
 
-pub fn WriteBytesStartingAt(self: *Self, address: u16, data: []u8) void {
+pub fn writeBytesStartingAt(self: *Self, address: u16, data: []u8) void {
     for (self.data[address..], data) |*addr, byte| {
         addr.* = byte;
     }
 }
 
-pub fn ReadByteAtAddress(self: *Self, address: u16) u8 {
+pub fn readByteAtAddress(self: *Self, address: u16) u8 {
     return self.data[address];
 }
 
-pub fn ReadWordAtAddress(self: *Self, address: u16) u16 {
+pub fn readWordAtAddress(self: *Self, address: u16) u16 {
     var word: u16 = 0;
     if (address + 1 < self.data.len) {
         word = self.data[address + 1];
@@ -40,7 +40,7 @@ pub fn ReadWordAtAddress(self: *Self, address: u16) u16 {
     return word;
 }
 
-pub fn ReadBytesStartingAt(self: *Self, address: u16, len: u16) []u8 {
+pub fn readBytesStartingAt(self: *Self, address: u16, len: u16) []u8 {
     var end_addr: u16 = if (address + len >= self.data.len) {
         self.data.len - 1;
     } else {
@@ -106,7 +106,7 @@ pub fn setMemory(self: *Self, memset_array: anytype) void {
             comptime var byte_counter = @sizeOf(@TypeOf(int_value));
             inline while (byte_counter > 0) : (byte_counter -= 1) {
                 const byte = @as(u8, @truncate(int_value));
-                self.WriteByteAtAddress(start_address, byte);
+                self.writeByteAtAddress(start_address, byte);
                 start_address += 1;
                 if (@TypeOf(int_value) == u8) {
                     continue;

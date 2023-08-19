@@ -26,7 +26,7 @@ test "initMem inits 1 byte at 1 address" {
 
     // then
     var expected_mem = Mem{};
-    expected_mem.WriteByteAtAddress(0x00, 0xAA);
+    expected_mem.writeByteAtAddress(0x00, 0xAA);
     try std.testing.expectEqualDeep(expected_mem, mem);
 }
 
@@ -41,7 +41,7 @@ test "initMem inits 1 word at 1 address" {
 
     // then
     var expected_mem = Mem{};
-    expected_mem.WriteWordAtAddress(0x00, 0xAABB);
+    expected_mem.writeWordAtAddress(0x00, 0xAABB);
     try std.testing.expectEqualDeep(expected_mem, mem);
 }
 
@@ -56,7 +56,7 @@ test "initMem inits at 2 bytes at 1 address" {
 
     // then
     var expected_mem = Mem{};
-    expected_mem.WriteWordAtAddress(0x00, 0xAABB);
+    expected_mem.writeWordAtAddress(0x00, 0xAABB);
     try std.testing.expectEqualDeep(expected_mem, mem);
 }
 
@@ -72,8 +72,8 @@ test "initMem inits at 2 bytes at 2 addresses" {
 
     // then
     var expected_mem = Mem{};
-    expected_mem.WriteByteAtAddress(0x00, 0xAA);
-    expected_mem.WriteByteAtAddress(0x02, 0xBB);
+    expected_mem.writeByteAtAddress(0x00, 0xAA);
+    expected_mem.writeByteAtAddress(0x02, 0xBB);
     try std.testing.expectEqualDeep(expected_mem, mem);
 }
 
@@ -90,12 +90,12 @@ test "initMem inits at variable sets of bytes at variable addresses" {
 
     // then
     var expected_mem = Mem{};
-    expected_mem.WriteByteAtAddress(0x00, 0xAA);
-    expected_mem.WriteByteAtAddress(0x01, 0xBB);
-    expected_mem.WriteByteAtAddress(0x02, 0xCC);
-    expected_mem.WriteByteAtAddress(0x08, 0xDD);
-    expected_mem.WriteByteAtAddress(0x09, 0xEE);
-    expected_mem.WriteByteAtAddress(0x10, 0xFF);
+    expected_mem.writeByteAtAddress(0x00, 0xAA);
+    expected_mem.writeByteAtAddress(0x01, 0xBB);
+    expected_mem.writeByteAtAddress(0x02, 0xCC);
+    expected_mem.writeByteAtAddress(0x08, 0xDD);
+    expected_mem.writeByteAtAddress(0x09, 0xEE);
+    expected_mem.writeByteAtAddress(0x10, 0xFF);
     try std.testing.expectEqualDeep(expected_mem, mem);
 }
 
@@ -112,9 +112,9 @@ test "initMem overwrites bytes when given overlapping regions with last winning"
 
     // then
     var expected_mem = Mem{};
-    expected_mem.WriteByteAtAddress(0x00, 0xAA);
-    expected_mem.WriteByteAtAddress(0x01, 0xBB);
-    expected_mem.WriteByteAtAddress(0x02, 0xDD);
-    expected_mem.WriteByteAtAddress(0x03, 0xFF);
+    expected_mem.writeByteAtAddress(0x00, 0xAA);
+    expected_mem.writeByteAtAddress(0x01, 0xBB);
+    expected_mem.writeByteAtAddress(0x02, 0xDD);
+    expected_mem.writeByteAtAddress(0x03, 0xFF);
     try std.testing.expectEqualDeep(expected_mem, mem);
 }

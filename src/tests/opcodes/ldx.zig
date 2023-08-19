@@ -13,12 +13,12 @@ test "LDX (Immediate) can load a value into the X register" {
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
         .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.ldx_immediate), 0x84 } },
     });
-    cpu.Reset(&mem);
+    cpu.reset(&mem);
     var expected_cpu = cpu;
 
     // when:
     var expected_cycles: u32 = 2;
-    var result = cpu.Execute(expected_cycles, &mem);
+    var result = cpu.execute(expected_cycles, &mem);
 
     // then:
     expected_cpu.X = 0x84;
@@ -39,12 +39,12 @@ test "LDX (Immediate) can load zero into the X register and set the Zero Flag" {
         .{ .start_address = 0xFFFC, .bytes = .{0x0200} },
         .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.ldx_immediate), 0x00 } },
     });
-    cpu.Reset(&mem);
+    cpu.reset(&mem);
     var expected_cpu = cpu;
 
     // when:
     var expected_cycles: u32 = 2;
-    var result = cpu.Execute(expected_cycles, &mem);
+    var result = cpu.execute(expected_cycles, &mem);
 
     // then:
     expected_cpu.X = 0;
@@ -66,12 +66,12 @@ test "LDX (Zero Page) can load a value into the X register" {
         .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.ldx_zero_page), 0x69 } },
         .{ .start_address = 0x0069, .bytes = .{0x34} },
     });
-    cpu.Reset(&mem);
+    cpu.reset(&mem);
     var expected_cpu = cpu;
 
     // when:
     var expected_cycles: u32 = 3;
-    var result = cpu.Execute(expected_cycles, &mem);
+    var result = cpu.execute(expected_cycles, &mem);
 
     // then:
     expected_cpu.X = 0x34;
@@ -93,13 +93,13 @@ test "LDX (Zero Page, Y) can load a value into the X register" {
         .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.ldx_zero_page_y), 0x48 } },
         .{ .start_address = 0x0069, .bytes = .{0x84} },
     });
-    cpu.Reset(&mem);
+    cpu.reset(&mem);
     var expected_cpu = cpu;
     cpu.Y = 0x21;
 
     // when:
     var expected_cycles: u32 = 4;
-    var result = cpu.Execute(expected_cycles, &mem);
+    var result = cpu.execute(expected_cycles, &mem);
 
     // then:
     expected_cpu.X = 0x84;
@@ -122,13 +122,13 @@ test "LDX (Zero Page, Y) can load a value into the X register when it wraps" {
         .{ .start_address = 0x0200, .bytes = .{ @intFromEnum(Cpu.Opcode.ldx_zero_page_y), 0xED } },
         .{ .start_address = 0x0056, .bytes = .{0x84} },
     });
-    cpu.Reset(&mem);
+    cpu.reset(&mem);
     var expected_cpu = cpu;
     cpu.Y = 0x69;
 
     // when:
     var expected_cycles: u32 = 4;
-    var result = cpu.Execute(expected_cycles, &mem);
+    var result = cpu.execute(expected_cycles, &mem);
 
     // then:
     expected_cpu.X = 0x84;
@@ -152,12 +152,12 @@ test "LDX (Absolute) can load a value into the X register" {
         .{ .start_address = 0x2169, .bytes = .{0x84} },
     });
 
-    cpu.Reset(&mem);
+    cpu.reset(&mem);
     var expected_cpu = cpu;
 
     // when:
     var expected_cycles: u32 = 4;
-    var result = cpu.Execute(expected_cycles, &mem);
+    var result = cpu.execute(expected_cycles, &mem);
 
     // then:
     expected_cpu.X = 0x84;
@@ -180,13 +180,13 @@ test "LDX (Absolute, Y) can load a value into the X register" {
         .{ .start_address = 0x4481, .bytes = .{0x84} },
     });
 
-    cpu.Reset(&mem);
+    cpu.reset(&mem);
     var expected_cpu = cpu;
     cpu.Y = 1;
 
     // when:
     var expected_cycles: u32 = 4;
-    var result = cpu.Execute(expected_cycles, &mem);
+    var result = cpu.execute(expected_cycles, &mem);
 
     // then:
     expected_cpu.X = 0x84;
@@ -210,13 +210,13 @@ test "LDX (Absolute, Y) can load a value into the X register when the reading ad
         .{ .start_address = 0x457F, .bytes = .{0x84} },
     });
 
-    cpu.Reset(&mem);
+    cpu.reset(&mem);
     var expected_cpu = cpu;
     cpu.Y = 0xFF;
 
     // when:
     var expected_cycles: u32 = 5;
-    var result = cpu.Execute(expected_cycles, &mem);
+    var result = cpu.execute(expected_cycles, &mem);
 
     // then:
     expected_cpu.X = 0x84;
