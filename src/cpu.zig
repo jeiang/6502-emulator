@@ -80,10 +80,7 @@ pub fn Execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
         const addr = self.getOperandAddress(&cycles, mem, op);
         switch (op.instruction()) {
             .jsr => {
-                // TODO: handle jsr implied
-                // TODO: use stack func
-                WriteWord(&cycles, mem, self.SP, self.PC - 1);
-                self.SP += 2;
+                self.PushWordToStack(&cycles, mem, self.PC);
                 self.PC = addr;
                 cycles += 1;
             },
@@ -262,4 +259,8 @@ fn PopWordFromStack(self: *Self, cycles: *u32, mem: *Mem) u8 {
     const result = @subWithOverflow(self.SP, 2);
     self.SP = result[0];
     return ReadWord(cycles, mem, addr);
+}
+
+pub fn GetTopOfStack(self: *Self) u16 {
+    return stack_base_addr | @as(u16, @intCast(self.SP));
 }

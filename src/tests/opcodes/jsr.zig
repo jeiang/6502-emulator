@@ -25,5 +25,5 @@ test "JSR can jump to address and save last address on stack" {
     expected_cpu.SP = 0x02;
     try std.testing.expectEqualDeep(expected_cpu, cpu);
     try std.testing.expectEqual(@as(Cpu.ExecuteError!void, void{}), result);
-    try std.testing.expectEqual(@as(u16, @intCast(0x0202)), mem.ReadWordAtAddress(expected_cpu.SP - 2));
+    try std.testing.expectEqual(@as(u16, @intCast(0x0203)), mem.ReadWordAtAddress(cpu.GetTopOfStack() - 2));
 }
