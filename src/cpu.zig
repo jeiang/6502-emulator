@@ -105,6 +105,12 @@ pub fn execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
                 return ExecuteError.UnhandledInstruction;
             },
             else => {
+                std.debug.print("Reached instruction called {any} with opcode {any}(0x{X:0>2}) at PC=0x{X:0>4}\n", .{
+                    instruction,
+                    op,
+                    raw_opcode,
+                    self.PC,
+                });
                 return ExecuteError.UnhandledInstruction;
             },
         }
