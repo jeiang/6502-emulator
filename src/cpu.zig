@@ -70,7 +70,7 @@ pub fn execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
         const instruction = op.instruction();
         switch (instruction) {
             .jsr => {
-                self.pushWordToStack(&cycles, mem, self.PC);
+                self.pushWordToStack(&cycles, mem, self.PC - 1);
                 self.PC = addr;
             },
             .lda => {
