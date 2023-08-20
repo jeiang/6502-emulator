@@ -135,7 +135,11 @@ fn getOperandAddress(self: *Self, cycles: *u32, mem: *Mem, op: Opcode) u16 {
     };
     var addr: u16 = undefined;
     switch (mode) {
-        .implied, .accumulator, .immediate => {
+        .implied => {
+            addr = self.PC;
+            // don't increment PC?
+        },
+        .accumulator, .immediate => {
             addr = self.PC;
             self.PC += 1;
         },
