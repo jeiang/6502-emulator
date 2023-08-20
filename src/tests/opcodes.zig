@@ -8,4 +8,10 @@ comptime {
     _ = @import("./opcodes/sta.zig");
     _ = @import("./opcodes/stx.zig");
     _ = @import("./opcodes/sty.zig");
+    _ = @import("./opcodes/tax.zig");
+    _ = @import("./opcodes/txa.zig");
+    _ = @import("./opcodes/tay.zig");
+    _ = @import("./opcodes/tya.zig");
+    _ = @import("./opcodes/tsx.zig");
+    _ = @import("./opcodes/txs.zig");
 }

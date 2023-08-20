@@ -103,6 +103,36 @@ pub fn execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
             .sty => {
                 writeByte(&cycles, mem, addr, self.Y);
             },
+            .tax => {
+                _ = readByte(&cycles, mem, addr); // wasted cycle since since single byte instr
+                self.X = self.A;
+                self.setZeroAndNegativeFlags(self.X);
+            },
+            .txa => {
+                _ = readByte(&cycles, mem, addr); // wasted cycle since since single byte instr
+                self.A = self.X;
+                self.setZeroAndNegativeFlags(self.A);
+            },
+            .tay => {
+                _ = readByte(&cycles, mem, addr); // wasted cycle since since single byte instr
+                self.Y = self.A;
+                self.setZeroAndNegativeFlags(self.Y);
+            },
+            .tya => {
+                _ = readByte(&cycles, mem, addr); // wasted cycle since since single byte instr
+                self.A = self.Y;
+                self.setZeroAndNegativeFlags(self.A);
+            },
+            .tsx => {
+                _ = readByte(&cycles, mem, addr); // wasted cycle since since single byte instr
+                self.X = self.SP;
+                self.setZeroAndNegativeFlags(self.X);
+            },
+            .txs => {
+                _ = readByte(&cycles, mem, addr); // wasted cycle since since single byte instr
+                self.SP = self.X;
+                // no flags since SP does not affect PS
+            },
             .brk => { // TODO: implement this last
                 std.debug.print("Completed Instruction set in {d} cycles.\n", .{cycles - 1}); // temp handler for too many instructions
                 return ExecuteError.UnhandledInstruction;
