@@ -140,7 +140,7 @@ pub fn format(value: Self, comptime fmt: []const u8, _: std.fmt.FormatOptions, w
             } else {
                 try writer.writeAll(", ");
             }
-            try std.fmt.format(writer, "0x{X:0>2} = 0x{X:0>2}", .{ addr, byte });
+            try std.fmt.format(writer, "0x{X:0>4} = 0x{X:0>2}", .{ addr, byte });
         }
     }
     try writer.writeAll(" }");
