@@ -73,6 +73,9 @@ pub fn execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
                 self.pushWordToStack(&cycles, mem, self.PC - 1);
                 self.PC = addr;
             },
+            .jmp => {
+                self.PC = addr;
+            },
             .lda => {
                 self.A = readByte(&cycles, mem, addr);
                 self.setZeroAndNegativeFlags(self.A);
@@ -178,7 +181,10 @@ fn getOperandAddress(self: *Self, cycles: *u32, mem: *Mem, op: Opcode) u16 {
                 cycles.* += 1;
             }
         },
-        .indirect => {},
+        .indirect => {
+            const indirect_address = self.fetchWord(cycles, mem);
+            addr = readWord(cycles, mem, indirect_address);
+        },
         .indexed_indirect => {
             var indirect_address: u8 = self.fetchByte(cycles, mem); // 1 cycle
             const add_result = @addWithOverflow(indirect_address, self.X); // 1 cycle
