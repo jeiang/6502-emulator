@@ -183,7 +183,14 @@ fn getOperandAddress(self: *Self, cycles: *u32, mem: *Mem, op: Opcode) u16 {
         },
         .indirect => {
             const indirect_address = self.fetchWord(cycles, mem);
-            addr = readWord(cycles, mem, indirect_address);
+            // if on a page boundary, emulate 6502 bug. see http://www.6502.org/users/obelisk/6502/reference.html#JMP
+            if (indirect_address & 0x00FF == 0x00FF) { // i.e. on a page boundary
+                const lower = @as(u16, readByte(cycles, mem, indirect_address));
+                const upper = @as(u16, readByte(cycles, mem, indirect_address & 0xFF00));
+                addr = (upper << 8) | lower;
+            } else {
+                addr = readWord(cycles, mem, indirect_address);
+            }
         },
         .indexed_indirect => {
             var indirect_address: u8 = self.fetchByte(cycles, mem); // 1 cycle
