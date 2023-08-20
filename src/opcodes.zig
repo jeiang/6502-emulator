@@ -359,9 +359,9 @@ pub const Opcode = enum(u8) {
         switch (self.*) {
             inline else => |tag| {
                 @setEvalBranchQuota(20000); // seems to be about enough
-                inline for (comptime std.enums.values(Instruction)) |mode| {
-                    if (comptime std.mem.eql(u8, @tagName(tag)[0..3], @tagName(mode))) {
-                        return mode;
+                inline for (comptime std.enums.values(Instruction)) |instr| {
+                    if (comptime std.mem.eql(u8, @tagName(tag)[0..3], @tagName(instr))) {
+                        return instr;
                     }
                 }
             },
