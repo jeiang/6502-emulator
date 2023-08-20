@@ -72,7 +72,6 @@ pub fn execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
             .jsr => {
                 self.pushWordToStack(&cycles, mem, self.PC);
                 self.PC = addr;
-                cycles += 1;
             },
             .lda => {
                 self.A = readByte(&cycles, mem, addr);
@@ -86,6 +85,12 @@ pub fn execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
                 self.Y = readByte(&cycles, mem, addr);
                 self.setZeroAndNegativeFlags(self.Y);
             },
+            .rts => {
+                _ = readByte(&cycles, mem, addr); // wasted cycle since since instr
+                const return_address = self.popWordFromStack(&cycles, mem);
+                self.PC = return_address + 1;
+                cycles += 1; // penalty for incrementing
+            },
             .sta => {
                 writeByte(&cycles, mem, addr, self.A);
             },
@@ -94,6 +99,10 @@ pub fn execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
             },
             .sty => {
                 writeByte(&cycles, mem, addr, self.Y);
+            },
+            .brk => { // TODO: implement this last
+                std.debug.print("Completed Instruction set in {d} cycles.\n", .{cycles - 1}); // temp handler for too many instructions
+                return ExecuteError.UnhandledInstruction;
             },
             else => {
                 return ExecuteError.UnhandledInstruction;
@@ -235,6 +244,7 @@ fn pushByteToStack(self: *Self, cycles: *u32, mem: *Mem, data: u8) void {
     const addr = self.getTopOfStack();
     const result = @subWithOverflow(self.SP, 1);
     self.SP = result[0];
+    cycles.* += 1;
     writeByte(cycles, mem, addr, data);
 }
 
@@ -242,6 +252,7 @@ fn pushWordToStack(self: *Self, cycles: *u32, mem: *Mem, data: u16) void {
     const addr = self.getTopOfStack();
     const result = @subWithOverflow(self.SP, 2);
     self.SP = result[0];
+    cycles.* += 1;
     writeWord(cycles, mem, addr, data);
 }
 
@@ -249,6 +260,7 @@ fn popByteFromStack(self: *Self, cycles: *u32, mem: *Mem) u8 {
     const result = @addWithOverflow(self.SP, 1);
     const addr = stack_base_addr | @as(u16, @intCast(result[0]));
     self.SP = result[0];
+    cycles.* += 1;
     return readByte(cycles, mem, addr);
 }
 
@@ -256,6 +268,7 @@ fn popWordFromStack(self: *Self, cycles: *u32, mem: *Mem) u16 {
     const result = @addWithOverflow(self.SP, 2);
     const addr = stack_base_addr | @as(u16, @intCast(result[0]));
     self.SP = result[0];
+    cycles.* += 1;
     return readWord(cycles, mem, addr);
 }
 
