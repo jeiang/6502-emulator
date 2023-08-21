@@ -14,3 +14,6 @@ result
 # Devenv Artifacts
 .devenv/
 .pre-commit-config.yaml
+
+# Kcov
+kcov-output/

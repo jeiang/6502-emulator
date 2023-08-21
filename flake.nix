@@ -77,6 +77,7 @@
                 zls
                 lldb
                 commitizen
+                kcov
               ];
 
               languages.nix.enable = true;
@@ -101,6 +102,9 @@
               '';
               scripts.commit.exec = ''
                 ${pkgs.commitizen}/bin/cz commit
+              '';
+              scripts.coverage.exec = ''
+                kcov --exclude-pattern=/nix ./kcov-output ./zig-cache/o/*/test
               '';
             })
           ];
