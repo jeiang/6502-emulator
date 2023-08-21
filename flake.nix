@@ -74,6 +74,7 @@
           modules = [
             ({pkgs, ...}: {
               packages = with pkgs; [
+                alejandra
                 zls
                 lldb
                 commitizen
