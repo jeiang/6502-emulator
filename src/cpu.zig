@@ -72,6 +72,7 @@ pub fn execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
             .jsr => {
                 self.pushWordToStack(&cycles, mem, self.PC - 1);
                 self.PC = addr;
+                cycles += 1; // JSR spends an extra cycle juggling the return address internally. see https://llx.com/Neil/a2/opcodes.html
             },
             .jmp => {
                 self.PC = addr;
@@ -87,6 +88,10 @@ pub fn execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
             .ldy => {
                 self.Y = readByte(&cycles, mem, addr);
                 self.setZeroAndNegativeFlags(self.Y);
+            },
+            .pha => {
+                _ = readByte(&cycles, mem, addr); // wasted cycle since since single byte instr
+                self.pushByteToStack(&cycles, mem, self.A);
             },
             .rts => {
                 _ = readByte(&cycles, mem, addr); // wasted cycle since since instr
@@ -297,7 +302,6 @@ fn pushByteToStack(self: *Self, cycles: *u32, mem: *Mem, data: u8) void {
     const addr = self.getTopOfStack();
     const result = @subWithOverflow(self.SP, 1);
     self.SP = result[0];
-    cycles.* += 1;
     writeByte(cycles, mem, addr, data);
 }
 
@@ -305,7 +309,6 @@ fn pushWordToStack(self: *Self, cycles: *u32, mem: *Mem, data: u16) void {
     const addr = self.getTopOfStack();
     const result = @subWithOverflow(self.SP, 2);
     self.SP = result[0];
-    cycles.* += 1;
     writeWord(cycles, mem, addr, data);
 }
 
@@ -313,6 +316,8 @@ fn popByteFromStack(self: *Self, cycles: *u32, mem: *Mem) u8 {
     const result = @addWithOverflow(self.SP, 1);
     const addr = stack_base_addr | @as(u16, @intCast(result[0]));
     self.SP = result[0];
+    // Instructions that pull data off the stack (PLA, PLP, RTI, RTS) need an extra cycle to increment the stack
+    // pointer. see https://llx.com/Neil/a2/opcodes.html#ins02
     cycles.* += 1;
     return readByte(cycles, mem, addr);
 }
@@ -321,6 +326,8 @@ fn popWordFromStack(self: *Self, cycles: *u32, mem: *Mem) u16 {
     const result = @addWithOverflow(self.SP, 2);
     const addr = stack_base_addr | @as(u16, @intCast(result[0]));
     self.SP = result[0];
+    // Instructions that pull data off the stack (PLA, PLP, RTI, RTS) need an extra cycle to increment the stack
+    // pointer. see https://llx.com/Neil/a2/opcodes.html#ins02
     cycles.* += 1;
     return readWord(cycles, mem, addr);
 }
