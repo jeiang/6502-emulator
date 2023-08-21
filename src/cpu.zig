@@ -93,6 +93,10 @@ pub fn execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
                 _ = readByte(&cycles, mem, addr); // wasted cycle since since single byte instr
                 self.pushByteToStack(&cycles, mem, self.A);
             },
+            .php => {
+                _ = readByte(&cycles, mem, addr); // wasted cycle since since single byte instr
+                self.pushByteToStack(&cycles, mem, @bitCast(self.PS));
+            },
             .rts => {
                 _ = readByte(&cycles, mem, addr); // wasted cycle since since instr
                 const return_address = self.popWordFromStack(&cycles, mem);
