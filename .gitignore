@@ -10,3 +10,7 @@ zig-out/
 # Nix Artifacts
 .direnv/
 result
+
+# Devenv Artifacts
+.devenv/
+.pre-commit-config.yaml
