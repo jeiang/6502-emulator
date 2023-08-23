@@ -6,6 +6,7 @@ comptime {
     _ = @import("./opcodes/ldy.zig");
     _ = @import("./opcodes/pha.zig");
     _ = @import("./opcodes/php.zig");
+    _ = @import("./opcodes/pla.zig");
     _ = @import("./opcodes/rts.zig");
     _ = @import("./opcodes/sta.zig");
     _ = @import("./opcodes/stx.zig");

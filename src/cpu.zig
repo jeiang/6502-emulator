@@ -97,6 +97,11 @@ pub fn execute(self: *Self, requested_cycles: u32, mem: *Mem) ExecuteError!void 
                 _ = readByte(&cycles, mem, addr); // wasted cycle since since single byte instr
                 self.pushByteToStack(&cycles, mem, @bitCast(self.PS));
             },
+            .pla => {
+                _ = readByte(&cycles, mem, addr); // wasted cycle since since single byte instr
+                self.A = self.popByteFromStack(&cycles, mem);
+                self.setZeroAndNegativeFlags(self.A);
+            },
             .rts => {
                 _ = readByte(&cycles, mem, addr); // wasted cycle since since instr
                 const return_address = self.popWordFromStack(&cycles, mem);
