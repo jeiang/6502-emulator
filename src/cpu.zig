@@ -302,21 +302,21 @@ fn writeWord(cycles: *u32, mem: *Mem, start_address: u16, data: u16) void {
 //==================================
 // The second page of memory ($0100-$01FF) is reserved for the system stack and which cannot be relocated.
 
-fn pushByteToStack(self: *Self, cycles: *u32, mem: *Mem, data: u8) void {
+pub fn pushByteToStack(self: *Self, cycles: *u32, mem: *Mem, data: u8) void {
     const addr = self.getTopOfStack();
     const result = @subWithOverflow(self.SP, 1);
     self.SP = result[0];
     writeByte(cycles, mem, addr, data);
 }
 
-fn pushWordToStack(self: *Self, cycles: *u32, mem: *Mem, data: u16) void {
+pub fn pushWordToStack(self: *Self, cycles: *u32, mem: *Mem, data: u16) void {
     const addr = self.getTopOfStack();
     const result = @subWithOverflow(self.SP, 2);
     self.SP = result[0];
     writeWord(cycles, mem, addr, data);
 }
 
-fn popByteFromStack(self: *Self, cycles: *u32, mem: *Mem) u8 {
+pub fn popByteFromStack(self: *Self, cycles: *u32, mem: *Mem) u8 {
     const result = @addWithOverflow(self.SP, 1);
     const addr = stack_base_addr | @as(u16, @intCast(result[0]));
     self.SP = result[0];
@@ -326,7 +326,7 @@ fn popByteFromStack(self: *Self, cycles: *u32, mem: *Mem) u8 {
     return readByte(cycles, mem, addr);
 }
 
-fn popWordFromStack(self: *Self, cycles: *u32, mem: *Mem) u16 {
+pub fn popWordFromStack(self: *Self, cycles: *u32, mem: *Mem) u16 {
     const result = @addWithOverflow(self.SP, 2);
     const addr = stack_base_addr | @as(u16, @intCast(result[0]));
     self.SP = result[0];
