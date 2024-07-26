@@ -2,6 +2,10 @@
 
 I roughly followed [this video](https://www.youtube.com/watch?v=qJgsuQoy9bc&t=347s) but did it in zig.
 
+## Future Goals
+
+- Load a ROM and run it, add graphics
+
 ## Misc Notes to Self
 
 Maybe using async proper "cycles" could be done (e.g. every time cycles is decremented, suspend). need to wait
